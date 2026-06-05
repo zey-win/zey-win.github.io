@@ -6,7 +6,7 @@
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <meta name="builder-key" content="3e9b0ac6ecd43c716a5c80255f6936b163a3ceaa" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-builder-keyfix1" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-console-shell1" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -163,21 +163,27 @@
       </div>
     </section>
 
-    <section class="console-shell" id="build-console" aria-hidden="true">
+    <section class="console-shell" id="build-console" aria-hidden="true" data-tab="console">
       <aside class="console-rail" aria-label="Меню консоли">
-        <div class="console-brand">
-          <span aria-hidden="true"></span>
-          <div>
-            <b>ZeyWin</b>
-            <small>Android Builder</small>
+        <div class="console-rail-head">
+          <div class="console-brand">
+            <span aria-hidden="true"></span>
+            <div>
+              <b>ZeyWin</b>
+              <small>Android Builder</small>
+            </div>
           </div>
+          <button class="console-menu-toggle" type="button" id="console-menu-toggle" aria-expanded="false" aria-controls="console-menu" aria-label="Открыть меню">
+            <span aria-hidden="true"></span>
+          </button>
         </div>
-        <nav class="console-menu" aria-label="Разделы">
-          <button class="is-active" type="button" id="console-builds-tab">Сборки</button>
-          <button type="button" id="console-open-logs">Логи Action</button>
+        <nav class="console-menu" id="console-menu" aria-label="Разделы">
+          <button class="is-active" type="button" data-console-tab="console">Консоль</button>
+          <button type="button" data-console-tab="builds">Сборки</button>
+          <button type="button" data-console-tab="downloads">Загрузки</button>
+          <button type="button" id="console-open-logs" data-console-tab="logs">Логи Action</button>
           <a id="console-actions-link" href="https://github.com/zey-win/ci-cd/actions" target="_blank" rel="noreferrer">GitHub Actions</a>
         </nav>
-        <button class="console-new-build" type="button" id="console-new-build">Новая сборка</button>
       </aside>
 
       <main class="console-main" aria-labelledby="console-title">
@@ -192,8 +198,15 @@
           </div>
         </header>
 
-        <div class="console-workspace">
+        <div class="console-workspace" data-console-panel="builds">
           <section class="console-builds" aria-label="Активные сборки">
+            <div class="console-section-head">
+              <div>
+                <p id="build-list-kicker">Приложения</p>
+                <h3 id="build-list-title">Список сборок</h3>
+              </div>
+              <button class="console-new-build" type="button" id="console-new-build">Добавить приложение</button>
+            </div>
             <div class="active-build-list" id="active-build-list">
               <p class="active-build-empty">После нажатия Билд здесь появятся параллельные сборки.</p>
             </div>
@@ -214,11 +227,11 @@
             </div>
           </section>
 
-          <section class="console-log-card" aria-label="Логи сборки">
+          <section class="console-log-card" aria-label="Подробности сборки">
             <header>
               <div>
-                <p>GitHub Actions</p>
-                <h3>Живые логи</h3>
+                <p id="build-detail-kicker">Подробности</p>
+                <h3 id="build-detail-title">Выберите сборку</h3>
               </div>
               <button class="secondary" type="button" id="console-refresh-logs">Обновить</button>
             </header>
@@ -226,6 +239,18 @@
             <pre class="console-log-output" id="console-log-output">Нажмите Билд, чтобы открыть поток логов.</pre>
           </section>
         </div>
+
+        <section class="console-downloads-page" data-console-panel="downloads" aria-label="Загрузки">
+          <div class="console-section-head">
+            <div>
+              <p>Готовые файлы</p>
+              <h3>Загрузки</h3>
+            </div>
+          </div>
+          <div class="download-list" id="download-list">
+            <p class="active-build-empty">Когда сборка закончит APK/AAB, здесь появятся свежие ссылки на скачивание.</p>
+          </div>
+        </section>
       </main>
     </section>
 
@@ -257,6 +282,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-builder-keyfix1"></script>
+    <script src="./builder.js?v=20260605-console-shell1"></script>
   </body>
 </html>

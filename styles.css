@@ -16,6 +16,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   min-height: 100%;
   overflow-x: hidden;
@@ -757,7 +761,7 @@ select:focus {
 .console-rail {
   min-height: 100%;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   gap: 24px;
   padding: 24px;
   border-right: 1px solid rgba(220, 226, 234, 0.92);
@@ -770,6 +774,13 @@ select:focus {
   grid-template-columns: 44px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
+}
+
+.console-rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .console-brand > span {
@@ -804,6 +815,45 @@ select:focus {
   gap: 10px;
 }
 
+.console-menu-toggle {
+  display: none;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  place-items: center;
+}
+
+.console-menu-toggle span,
+.console-menu-toggle span::before,
+.console-menu-toggle span::after {
+  width: 24px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--ink);
+  content: "";
+  display: block;
+}
+
+.console-menu-toggle span {
+  position: relative;
+}
+
+.console-menu-toggle span::before,
+.console-menu-toggle span::after {
+  position: absolute;
+  left: 0;
+}
+
+.console-menu-toggle span::before {
+  top: -9px;
+}
+
+.console-menu-toggle span::after {
+  top: 9px;
+}
+
 .console-menu button,
 .console-menu a,
 .console-new-build {
@@ -832,6 +882,11 @@ select:focus {
   color: white;
   background: linear-gradient(135deg, var(--green), var(--blue));
   box-shadow: 0 16px 34px rgba(25, 112, 130, 0.22);
+}
+
+.console-top .console-new-build {
+  min-width: 190px;
+  align-self: center;
 }
 
 .console-main {
@@ -905,9 +960,56 @@ select:focus {
   align-items: start;
 }
 
+.console-shell[data-tab="logs"] .console-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.console-shell[data-tab="logs"] .console-builds {
+  display: none;
+}
+
+.console-shell[data-tab="logs"] .console-log-card {
+  min-height: min(720px, calc(100vh - 132px));
+}
+
+.console-downloads-page {
+  width: min(1320px, 100%);
+  margin: 0 auto;
+}
+
 .console-builds {
   display: grid;
   gap: 14px;
+}
+
+.console-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(220, 226, 234, 0.94);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 48px rgba(18, 33, 57, 0.09);
+}
+
+.console-section-head p,
+.console-section-head h3 {
+  margin: 0;
+}
+
+.console-section-head p {
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.console-section-head h3 {
+  margin-top: 4px;
+  font-size: 22px;
+  line-height: 1.1;
 }
 
 .active-build-list {
@@ -931,9 +1033,9 @@ select:focus {
 .active-build {
   width: 100%;
   display: grid;
-  grid-template-columns: 74px minmax(0, 1fr);
-  gap: 14px;
-  padding: 16px;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 12px;
   border: 1px solid rgba(220, 226, 234, 0.94);
   border-radius: 8px;
   color: var(--ink);
@@ -957,8 +1059,8 @@ select:focus {
 
 .active-build-icon {
   position: relative;
-  width: 74px;
-  height: 74px;
+  width: 52px;
+  height: 52px;
   border: 1px solid rgba(25, 167, 111, 0.34);
   border-radius: 8px;
   background:
@@ -971,10 +1073,10 @@ select:focus {
 
 .active-build-icon i {
   position: absolute;
-  right: -4px;
-  top: -4px;
-  width: 18px;
-  height: 18px;
+  right: -3px;
+  top: -3px;
+  width: 14px;
+  height: 14px;
   border: 3px solid #fff;
   border-radius: 50%;
   background: #d94242;
@@ -986,6 +1088,11 @@ select:focus {
   box-shadow: 0 0 0 5px rgba(25, 167, 111, 0.18);
 }
 
+.active-build.is-queued .active-build-icon i {
+  background: #aeb8c6;
+  box-shadow: 0 0 0 5px rgba(174, 184, 198, 0.18);
+}
+
 .active-build.is-failed .active-build-icon i {
   background: #d94242;
   box-shadow: 0 0 0 5px rgba(217, 66, 66, 0.18);
@@ -994,7 +1101,49 @@ select:focus {
 .active-build-body {
   min-width: 0;
   display: grid;
-  gap: 5px;
+  gap: 4px;
+}
+
+.active-build-main,
+.active-build-meta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.active-build-state {
+  flex: 0 0 auto;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 9px;
+  color: #1f5e42;
+  background: rgba(25, 167, 111, 0.13);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.active-build.is-ready .active-build-state {
+  color: var(--green-dark);
+  background: rgba(25, 167, 111, 0.14);
+}
+
+.active-build.is-running .active-build-state {
+  color: #1d57b8;
+  background: rgba(39, 102, 216, 0.12);
+}
+
+.active-build.is-queued .active-build-state {
+  color: #667080;
+  background: rgba(174, 184, 198, 0.18);
+}
+
+.active-build.is-failed .active-build-state {
+  color: #a52222;
+  background: rgba(217, 66, 66, 0.12);
 }
 
 .active-build-kicker {
@@ -1009,21 +1158,26 @@ select:focus {
 
 .active-build b {
   overflow: hidden;
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 950;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .active-build small,
-.active-build em {
+.active-build em,
+.active-build-log {
   overflow: hidden;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 12px;
   font-style: normal;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.active-build-meta small {
+  font-weight: 850;
 }
 
 .active-build-footer {
@@ -1118,6 +1272,101 @@ select:focus {
   font-size: 13px;
   font-weight: 850;
   text-decoration: none;
+}
+
+.download-list {
+  display: grid;
+  gap: 12px;
+}
+
+.download-row {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(220, 226, 234, 0.94);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 20px 56px rgba(18, 33, 57, 0.1);
+}
+
+.download-icon {
+  width: 66px;
+  height: 66px;
+  border: 1px solid rgba(25, 167, 111, 0.34);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(25, 167, 111, 0.2), rgba(39, 102, 216, 0.2)),
+    #fff;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.download-body {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.download-body b,
+.download-body small,
+.download-body em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-body b {
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.download-body small,
+.download-body em {
+  color: var(--muted);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.download-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.download-button,
+.download-missing {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.download-button {
+  border: 1px solid rgba(31, 111, 235, 0.24);
+  background: #fff;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.download-button:hover {
+  border-color: rgba(25, 167, 111, 0.38);
+  color: var(--green-dark);
+}
+
+.download-missing {
+  border: 1px dashed rgba(174, 184, 198, 0.86);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .console-payload-card {
@@ -1437,22 +1686,34 @@ select:focus {
 
   .console-rail {
     min-height: 0;
-    grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr) max-content;
-    grid-template-rows: auto;
-    align-items: center;
-    gap: 14px;
+    display: block;
     padding: 14px;
     border-right: 0;
     border-bottom: 1px solid rgba(220, 226, 234, 0.92);
   }
 
+  .console-rail-head {
+    min-height: 58px;
+  }
+
+  .console-menu-toggle {
+    display: grid;
+  }
+
   .console-menu {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: none;
+    margin-top: 12px;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .console-rail.is-menu-open .console-menu {
+    display: grid;
   }
 
   .console-menu button,
   .console-menu a,
-  .console-new-build {
+  .console-rail .console-new-build {
     justify-content: center;
     text-align: center;
   }
@@ -1464,6 +1725,10 @@ select:focus {
 
   .console-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .console-shell[data-tab="logs"] .console-builds {
+    display: none;
   }
 
   .builder-grid {
@@ -1542,27 +1807,58 @@ select:focus {
     display: grid;
   }
 
+  .console-top .console-new-build {
+    width: 100%;
+    min-width: 0;
+  }
+
   .console-countdown {
     width: 100%;
     text-align: left;
   }
 
   .active-build {
-    grid-template-columns: 58px minmax(0, 1fr);
+    grid-template-columns: 48px minmax(0, 1fr);
   }
 
   .active-build-icon {
-    width: 58px;
-    height: 58px;
+    width: 48px;
+    height: 48px;
   }
 
   .active-build b {
-    font-size: 18px;
+    font-size: 15px;
+  }
+
+  .active-build-main,
+  .active-build-meta {
+    align-items: flex-start;
+    display: grid;
+    justify-content: stretch;
   }
 
   .console-log-card header {
     align-items: flex-start;
     display: grid;
+  }
+
+  .download-row {
+    grid-template-columns: 58px minmax(0, 1fr);
+  }
+
+  .download-icon {
+    width: 58px;
+    height: 58px;
+  }
+
+  .download-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .download-button,
+  .download-missing {
+    flex: 1 1 140px;
   }
 }
 

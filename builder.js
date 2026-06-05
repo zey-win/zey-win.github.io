@@ -34,11 +34,14 @@ const closeLogsButton = document.querySelector("#close-logs");
 const logMeta = document.querySelector("#log-meta");
 const logOutput = document.querySelector("#log-output");
 const consoleShell = document.querySelector("#build-console");
+const consoleRail = document.querySelector(".console-rail");
+const consoleMenuToggle = document.querySelector("#console-menu-toggle");
 const consoleNewBuild = document.querySelector("#console-new-build");
 const consoleOpenLogs = document.querySelector("#console-open-logs");
 const consoleRefreshLogs = document.querySelector("#console-refresh-logs");
 const consoleActionsLink = document.querySelector("#console-actions-link");
 const consoleSummary = document.querySelector("#console-summary");
+const consoleTitle = document.querySelector("#console-title");
 const consoleRemaining = document.querySelector("#console-remaining");
 const consoleProgress = document.querySelector("#console-progress");
 const activeBuildList = document.querySelector("#active-build-list");
@@ -47,6 +50,13 @@ const consolePayloadList = document.querySelector("#console-payload-list");
 const consoleLogMeta = document.querySelector("#console-log-meta");
 const consoleLogOutput = document.querySelector("#console-log-output");
 const consoleDownloads = document.querySelector("#console-downloads");
+const consoleTabs = Array.from(document.querySelectorAll("[data-console-tab]"));
+const consolePanels = Array.from(document.querySelectorAll("[data-console-panel]"));
+const buildListTitle = document.querySelector("#build-list-title");
+const buildListKicker = document.querySelector("#build-list-kicker");
+const buildDetailTitle = document.querySelector("#build-detail-title");
+const buildDetailKicker = document.querySelector("#build-detail-kicker");
+const downloadList = document.querySelector("#download-list");
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "");
 const configuredOperatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const operatorStorageKey = "zeywin_builder_operator_key";
@@ -200,8 +210,43 @@ function closeBuilder({ restoreFocus = true } = {}) {
   shell.classList.remove("is-open");
   shell.setAttribute("aria-hidden", "true");
   if (restoreFocus) {
-    openButton.focus();
+    (consoleShell.classList.contains("is-open") ? consoleNewBuild : openButton).focus();
   }
+}
+
+function setConsoleMenuOpen(isOpen) {
+  if (!consoleRail || !consoleMenuToggle) return;
+  consoleRail.classList.toggle("is-menu-open", isOpen);
+  consoleMenuToggle.setAttribute("aria-expanded", String(isOpen));
+  consoleMenuToggle.setAttribute("aria-label", isOpen ? "Закрыть меню" : "Открыть меню");
+}
+
+function showConsoleTab(tab = "console") {
+  const normalized = ["console", "builds", "downloads", "logs"].includes(tab) ? tab : "console";
+  consoleShell.dataset.tab = normalized;
+  setConsoleMenuOpen(false);
+  consoleTabs.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.consoleTab === normalized);
+  });
+  consolePanels.forEach((panel) => {
+    const panelName = panel.dataset.consolePanel;
+    const visible = normalized === "downloads"
+      ? panelName === "downloads"
+      : panelName === "builds";
+    panel.hidden = !visible;
+  });
+
+  const titles = {
+    console: ["Консоль", "Приложения в работе", "Список приложений"],
+    builds: ["Сборки", "Все сборки", "Список сборок"],
+    downloads: ["Загрузки", "Готовые файлы", "Загрузки"],
+    logs: ["Логи Action", "GitHub Actions", "Логи выбранной сборки"]
+  };
+  const [title, kicker, listTitle] = titles[normalized];
+  consoleTitle.textContent = title;
+  if (buildListKicker) buildListKicker.textContent = kicker;
+  if (buildListTitle) buildListTitle.textContent = listTitle;
+  renderDownloadList();
 }
 
 function createBuild(payload) {
@@ -253,11 +298,19 @@ function formatSeconds(secondsLeft) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function openConsole(build) {
-  closeBuilder({ restoreFocus: false });
+function openConsole(build = null, tab = "console") {
+  if (shell.classList.contains("is-open")) {
+    closeBuilder({ restoreFocus: false });
+  }
   consoleShell.classList.add("is-open");
   consoleShell.setAttribute("aria-hidden", "false");
-  selectBuild(build.id, { openDetails: false });
+  if (build?.id) {
+    selectBuild(build.id, { openDetails: false });
+  } else {
+    renderBuildList();
+    renderSelectedBuildDetails();
+  }
+  showConsoleTab(tab);
 }
 
 function renderConsolePayload(payload) {
@@ -286,35 +339,57 @@ function renderBuildList() {
   if (!activeBuildList) return;
   if (builds.length === 0) {
     activeBuildList.innerHTML = '<p class="active-build-empty">После нажатия Билд здесь появятся параллельные сборки.</p>';
+    renderDownloadList();
     return;
   }
 
   activeBuildList.innerHTML = builds
     .map((build, index) => {
-      const stateClass = build.artifactReady ? "is-ready" : build.state === "failed" ? "is-failed" : "is-running";
+      const stateClass = build.artifactReady
+        ? "is-ready"
+        : build.state === "failed"
+          ? "is-failed"
+          : build.state === "queued"
+            ? "is-queued"
+            : "is-running";
       const selectedClass = build.id === selectedBuildId ? "is-selected" : "";
       const progress = buildProgress(build).toFixed(2);
       const position = builds.length - index;
+      const statusLabel = build.artifactReady
+        ? "Готово"
+        : build.state === "failed"
+          ? "Ошибка"
+          : build.state === "queued"
+            ? "В ожидании"
+            : "Работает";
+      const timeLabel = build.artifactReady
+        ? "файлы готовы"
+        : build.state === "failed"
+          ? "остановлено"
+          : formatSeconds(build.secondsLeft);
       return `
         <button class="active-build ${stateClass} ${selectedClass}" type="button" data-build-id="${escapeHtml(build.id)}" aria-label="Открыть логи сборки ${escapeHtml(maskValue("request", build.requestId))}">
           <span class="active-build-icon" aria-hidden="true" style="${build.iconDataUrl ? `background-image: url('${build.iconDataUrl.replace(/'/g, "%27")}')` : ""}">
             <i></i>
           </span>
           <span class="active-build-body">
-            <span class="active-build-kicker">${escapeHtml(build.payload.package_name || "package не указан")}</span>
-            <b>${escapeHtml(build.payload.app_name || "Android приложение")}</b>
-            <small>${escapeHtml(build.meta)}</small>
-            <em>${escapeHtml(build.logLine)}</em>
-            <span class="active-build-footer">
-              <span>#${position} · ${escapeHtml(formatBuildFormat(build.payload.build_format))}</span>
-              <span>${escapeHtml(build.artifactReady ? "готово" : build.state === "failed" ? "ошибка" : formatSeconds(build.secondsLeft))}</span>
+            <span class="active-build-main">
+              <b>${escapeHtml(build.payload.app_name || "Android приложение")}</b>
+              <span class="active-build-state">${escapeHtml(statusLabel)}</span>
             </span>
+            <span class="active-build-kicker">${escapeHtml(build.payload.package_name || "package не указан")}</span>
+            <span class="active-build-meta">
+              <small>#${position} · ${escapeHtml(formatBuildFormat(build.payload.build_format))}</small>
+              <small>${escapeHtml(timeLabel)}</small>
+            </span>
+            <span class="active-build-log">${escapeHtml(build.logLine)}</span>
             <span class="active-build-progress" aria-hidden="true"><span style="width: ${progress}%"></span></span>
           </span>
         </button>
       `;
     })
     .join("");
+  renderDownloadList();
 }
 
 function updateConsoleSummary() {
@@ -333,6 +408,8 @@ function renderSelectedBuildDetails() {
     consoleProgress.style.width = "0%";
     consoleArtifact.classList.remove("is-ready");
     consoleArtifact.querySelector("b").textContent = "APK/AAB ещё не готов";
+    if (buildDetailKicker) buildDetailKicker.textContent = "Подробности";
+    if (buildDetailTitle) buildDetailTitle.textContent = "Выберите сборку";
     renderArtifactDownloads(null);
     consolePayloadList.innerHTML = '<p>Payload появится после запуска сборки.</p>';
     consoleLogMeta.textContent = "Run ещё не создан.";
@@ -342,6 +419,12 @@ function renderSelectedBuildDetails() {
     return;
   }
 
+  if (buildDetailKicker) {
+    buildDetailKicker.textContent = build.artifactReady ? "Готовая сборка" : "Сборка в работе";
+  }
+  if (buildDetailTitle) {
+    buildDetailTitle.textContent = build.payload.app_name || "Android приложение";
+  }
   renderConsolePayload(build.payload);
   consoleArtifact.classList.toggle("is-ready", build.artifactReady);
   consoleArtifact.querySelector("b").textContent = build.artifactText;
@@ -410,12 +493,54 @@ function renderArtifactDownloads(build) {
     .join("");
 }
 
+function downloadButtonFor(build, type) {
+  const wanted = String(type || "").toLowerCase();
+  const item = (build.artifactDownloads || []).find((download) => {
+    const haystack = `${download.type || ""} ${download.name || ""}`.toLowerCase();
+    return haystack.includes(wanted);
+  });
+  if (!item) {
+    return `<span class="download-missing">${escapeHtml(type)} не найден</span>`;
+  }
+  return `
+    <a class="download-button" href="${escapeHtml(item.url)}" download="${escapeHtml(item.name)}" target="_blank" rel="noreferrer">
+      Скачать ${escapeHtml(type)}
+    </a>
+  `;
+}
+
+function renderDownloadList() {
+  if (!downloadList) return;
+  const readyBuilds = builds.filter((build) => build.artifactReady && build.artifactDownloads?.length);
+  if (readyBuilds.length === 0) {
+    downloadList.innerHTML = '<p class="active-build-empty">Когда сборка закончит APK/AAB, здесь появятся свежие ссылки на скачивание.</p>';
+    return;
+  }
+
+  downloadList.innerHTML = readyBuilds
+    .map((build) => `
+      <article class="download-row">
+        <span class="download-icon" aria-hidden="true" style="${build.iconDataUrl ? `background-image: url('${build.iconDataUrl.replace(/'/g, "%27")}')` : ""}"></span>
+        <span class="download-body">
+          <b>${escapeHtml(build.payload.app_name || "Android приложение")}</b>
+          <small>${escapeHtml(build.payload.package_name || "")}</small>
+          <em>${escapeHtml(build.artifactText || "APK/AAB готов")}</em>
+        </span>
+        <span class="download-actions">
+          ${downloadButtonFor(build, "APK")}
+          ${downloadButtonFor(build, "AAB")}
+        </span>
+      </article>
+    `)
+    .join("");
+}
+
 function selectBuild(id, { openDetails = false } = {}) {
   selectedBuildId = id;
   renderBuildList();
   renderSelectedBuildDetails();
   if (openDetails) {
-    openLogs();
+    showConsoleTab("console");
   }
 }
 
@@ -1005,6 +1130,7 @@ function setArtifactSignal(build, ready, text, url = "", downloads = []) {
       actionsLink.href = url;
     }
   }
+  renderDownloadList();
   updateBuildCard(build);
 }
 
@@ -1050,17 +1176,25 @@ function openLogs(buildId = selectedBuildId) {
     renderBuildList();
     renderSelectedBuildDetails();
   }
-  logShell.classList.add("is-open");
-  logShell.setAttribute("aria-hidden", "false");
-  refreshLogs();
+  openConsole(getSelectedBuild(), "logs");
+  const build = getSelectedBuild();
+  if (build) {
+    refreshBuildLogs(build);
+  }
   clearInterval(logRefreshId);
-  logRefreshId = setInterval(refreshLogs, 8000);
+  logRefreshId = setInterval(() => {
+    const selected = getSelectedBuild();
+    if (selected) {
+      refreshBuildLogs(selected);
+    }
+  }, 8000);
 }
 
 function closeLogs() {
   logShell.classList.remove("is-open");
   logShell.setAttribute("aria-hidden", "true");
   clearInterval(logRefreshId);
+  showConsoleTab("console");
 }
 
 async function findRun(build) {
@@ -1125,7 +1259,7 @@ async function refreshLogs() {
   }
 }
 
-openButton.addEventListener("click", () => openBuilder(openButton));
+openButton.addEventListener("click", () => openConsole(null, "console"));
 closeButton.addEventListener("click", () => {
   closeBuilder({ restoreFocus: !consoleShell.classList.contains("is-open") });
 });
@@ -1147,13 +1281,29 @@ pickIconButton.addEventListener("click", () => iconInput.click());
 if (timerRing) {
   timerRing.addEventListener("click", () => openLogs(selectedBuildId));
 }
-buildToast.addEventListener("click", () => openLogs(toastBuildId || selectedBuildId));
+buildToast.addEventListener("click", () => {
+  const build = getBuild(toastBuildId) || getSelectedBuild();
+  openConsole(build, "console");
+});
 activeBuildList.addEventListener("click", (event) => {
   const card = event.target.closest("[data-build-id]");
   if (!card) return;
   selectBuild(card.dataset.buildId, { openDetails: true });
 });
-consoleOpenLogs.addEventListener("click", () => openLogs(selectedBuildId));
+consoleTabs.forEach((button) => {
+  button.addEventListener("click", () => {
+    const tab = button.dataset.consoleTab;
+    if (tab === "logs") {
+      openLogs(selectedBuildId);
+      return;
+    }
+    showConsoleTab(tab);
+  });
+});
+consoleMenuToggle.addEventListener("click", () => {
+  const isOpen = consoleRail.classList.contains("is-menu-open");
+  setConsoleMenuOpen(!isOpen);
+});
 consoleRefreshLogs.addEventListener("click", () => {
   const build = getSelectedBuild();
   if (build) {
