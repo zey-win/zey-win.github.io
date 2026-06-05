@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-builder3" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-builder4" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -94,6 +94,13 @@
                   </span>
                 </label>
               </div>
+              <label class="fast-mode">
+                <input id="fast_build" name="fast_build" type="checkbox" checked />
+                <span>
+                  <b>Ускоренный режим</b>
+                  <small>cache активен, Android ARM64 без 32-bit</small>
+                </span>
+              </label>
               <div class="field-row">
                 <label class="field" for="version_mode">
                   <span>Версия</span>
@@ -169,6 +176,18 @@
       </div>
     </section>
 
+    <button class="build-toast" id="build-toast" type="button" aria-live="polite" aria-label="Открыть подробности сборки">
+      <span class="build-toast-icon" id="build-toast-icon" aria-hidden="true"></span>
+      <span class="build-toast-body">
+        <span class="build-toast-title" id="build-toast-title">Сборка Android</span>
+        <span class="build-toast-meta" id="build-toast-meta">Ожидает запуска.</span>
+        <span class="build-toast-log" id="build-toast-log">Логи появятся после запуска GitHub Actions.</span>
+        <span class="build-toast-progress" aria-hidden="true">
+          <span id="build-toast-progress"></span>
+        </span>
+      </span>
+    </button>
+
     <section class="log-shell" id="log-shell" aria-hidden="true">
       <div class="log-panel" role="dialog" aria-modal="true" aria-labelledby="log-title">
         <header class="log-head">
@@ -185,6 +204,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-builder3"></script>
+    <script src="./builder.js?v=20260605-builder4"></script>
   </body>
 </html>

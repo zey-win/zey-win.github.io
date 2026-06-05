@@ -21,6 +21,12 @@ const timerValue = document.querySelector("#timer-value");
 const statusText = document.querySelector("#build-status");
 const actionsLink = document.querySelector("#actions-link");
 const artifactSignal = document.querySelector("#artifact-signal");
+const buildToast = document.querySelector("#build-toast");
+const buildToastIcon = document.querySelector("#build-toast-icon");
+const buildToastTitle = document.querySelector("#build-toast-title");
+const buildToastMeta = document.querySelector("#build-toast-meta");
+const buildToastLog = document.querySelector("#build-toast-log");
+const buildToastProgress = document.querySelector("#build-toast-progress");
 const logShell = document.querySelector("#log-shell");
 const closeLogsButton = document.querySelector("#close-logs");
 const logMeta = document.querySelector("#log-meta");
@@ -30,6 +36,7 @@ const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.rep
 let selectedIconDataUrl = "";
 let timerId = 0;
 let logRefreshId = 0;
+let toastLogRefreshId = 0;
 let artifactRefreshId = 0;
 let currentRequestId = "";
 let currentRunId = "";
@@ -37,6 +44,7 @@ let currentPackageName = "";
 let startVersionCode = 0;
 let versionLoadId = 0;
 let payloadAnimationTimer = 0;
+let currentBuildStartedAt = 0;
 
 iconEditor.inert = true;
 
@@ -51,6 +59,10 @@ function getBuildFormat() {
   if (formats.includes("apk") && formats.includes("aab")) return "apk_aab";
   if (formats.includes("aab")) return "aab";
   return "apk";
+}
+
+function formatBuildFormat(value) {
+  return value === "apk_aab" ? "APK+AAB" : String(value || "apk").toUpperCase();
 }
 
 function syncBuildMode() {
@@ -162,6 +174,7 @@ function collectPayload() {
     version_name: data.version_name || "",
     version_code: data.version_code || "",
     build_format: getBuildFormat(),
+    fast_build: data.fast_build === "on" ? "true" : "false",
     publish_to_google_play: "false",
     google_play_track: "production",
     google_play_status: "completed",
@@ -187,6 +200,7 @@ function renderPayload(payload) {
     ["version_mode", payload.version_mode],
     ["version_name", payload.version_name || "auto"],
     ["version_code", payload.version_code || "auto"],
+    ["fast_build", payload.fast_build === "true" ? "ускоренный" : "полный"],
     ["zeywin_api_key", payload.zeywin_api_key],
     ["admob_android_app_id", payload.admob_android_app_id],
     ["admob_android_banner_id", payload.admob_android_banner_id],
@@ -218,6 +232,8 @@ function setTimer(secondsLeft, totalSeconds) {
   timerValue.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
   const progress = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 360);
   timerRing.style.setProperty("--progress", `${progress}deg`);
+  const percent = ((totalSeconds - secondsLeft) / totalSeconds) * 100;
+  buildToastProgress.style.width = `${secondsLeft === 0 ? 100 : Math.max(4, percent).toFixed(2)}%`;
 }
 
 function startTimer(totalSeconds = 600) {
@@ -231,6 +247,86 @@ function startTimer(totalSeconds = 600) {
       clearInterval(timerId);
     }
   }, 1000);
+}
+
+function showBuildToast(payload) {
+  currentBuildStartedAt = Date.now();
+  buildToastTitle.textContent = payload.app_name || "Сборка Android";
+  buildToastMeta.textContent = `${formatBuildFormat(payload.build_format)} · ожидаю GitHub Actions`;
+  buildToastLog.textContent = "Run ещё создаётся. Нажмите, чтобы открыть подробности.";
+  buildToastProgress.style.width = "4%";
+  buildToastIcon.style.backgroundImage = selectedIconDataUrl ? `url("${selectedIconDataUrl}")` : "";
+  buildToast.classList.add("is-visible");
+}
+
+function updateBuildToast(meta, logLine = "") {
+  buildToastMeta.textContent = meta;
+  if (logLine) {
+    buildToastLog.textContent = logLine;
+  }
+}
+
+function lastUsefulLogLine(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !/^=+$/.test(line))
+    .slice(-1)[0] || "";
+}
+
+function shortLogFromJobs(data) {
+  const jobs = data.jobs || [];
+  const activeJob = jobs.find((job) => job.status === "in_progress") || jobs.find((job) => job.status === "queued") || jobs[jobs.length - 1];
+  if (!activeJob) {
+    return "Jobs ещё не появились.";
+  }
+
+  const line = lastUsefulLogLine(activeJob.logTail);
+  return line ? `${activeJob.name}: ${line}` : `${activeJob.name}: ${activeJob.status || "ожидает"}`;
+}
+
+async function fetchRunLogs() {
+  const runId = await findRun();
+  if (!runId) {
+    return { run: null, jobs: [] };
+  }
+
+  const response = await fetch(`${apiBase}/api/logs?run_id=${encodeURIComponent(runId)}`, {
+    headers: operatorHeaders(),
+    cache: "no-store"
+  });
+  const data = await response.json();
+  if (!response.ok || !data.ok) {
+    throw new Error(data.error || "Не удалось загрузить логи.");
+  }
+  return data;
+}
+
+function startToastLogPolling() {
+  clearInterval(toastLogRefreshId);
+  refreshToastLogs();
+  toastLogRefreshId = setInterval(refreshToastLogs, 7000);
+}
+
+async function refreshToastLogs() {
+  if (!currentRequestId) return;
+
+  try {
+    const data = await fetchRunLogs();
+    if (!data.run) {
+      const seconds = Math.max(1, Math.round((Date.now() - currentBuildStartedAt) / 1000));
+      updateBuildToast(`ищу workflow run · ${seconds}s`, "GitHub Actions ещё создаёт run.");
+      return;
+    }
+
+    const state = data.run.conclusion || data.run.status || "unknown";
+    updateBuildToast(`Run #${data.run.runNumber} · ${state}`, shortLogFromJobs(data));
+    if (data.run.status === "completed") {
+      clearInterval(toastLogRefreshId);
+    }
+  } catch (error) {
+    updateBuildToast("Ошибка логов", error.message);
+  }
 }
 
 async function readIcon(file) {
@@ -271,7 +367,9 @@ async function submitBuild(event) {
   currentPackageName = payload.package_name;
   startVersionCode = payload.build_format === "apk" ? 1 : Number(payload.version_code || 0);
   renderPayload(payload);
+  showBuildToast(payload);
   startTimer(600);
+  startToastLogPolling();
   setArtifactSignal(false, "APK/AAB ещё не готов");
   statusText.textContent = "Payload ушёл в backend. Жду GitHub Actions...";
 
@@ -299,6 +397,7 @@ async function submitBuild(event) {
       startVersionCode = Number(data.latestArtifact.versionCode) + 1;
     }
     startArtifactPolling();
+    startToastLogPolling();
     statusText.textContent = data.icon?.path
       ? `Иконка записана, сборка отправлена в Actions. Нажмите на круг, чтобы смотреть логи.`
       : `Сборка отправлена в Actions. Нажмите на круг, чтобы смотреть логи.`;
@@ -341,6 +440,7 @@ async function pollArtifact() {
       clearInterval(artifactRefreshId);
       const label = `${data.artifact.type} готов: v${data.artifact.versionCode}`;
       setArtifactSignal(true, label, data.artifact.releaseUrl);
+      updateBuildToast(label, "Готово. Нажмите, чтобы открыть подробности сборки.");
       statusText.textContent = `${label}. Можно открыть GitHub Release.`;
     }
   } catch (error) {
@@ -388,19 +488,10 @@ async function refreshLogs() {
     }
 
     logMeta.textContent = `Ищу workflow run: ${currentRequestId}`;
-    const runId = await findRun();
-    if (!runId) {
+    const data = await fetchRunLogs();
+    if (!data.run) {
       logOutput.textContent = "GitHub Actions ещё создаёт run. Обновляю автоматически...";
       return;
-    }
-
-    const response = await fetch(`${apiBase}/api/logs?run_id=${encodeURIComponent(runId)}`, {
-      headers: operatorHeaders(),
-      cache: "no-store"
-    });
-    const data = await response.json();
-    if (!response.ok || !data.ok) {
-      throw new Error(data.error || "Не удалось загрузить логи.");
     }
 
     logMeta.innerHTML = `
@@ -429,6 +520,7 @@ form.addEventListener("submit", submitBuild);
 iconTrigger.addEventListener("click", toggleIconEditor);
 pickIconButton.addEventListener("click", () => iconInput.click());
 timerRing.addEventListener("click", openLogs);
+buildToast.addEventListener("click", openLogs);
 closeLogsButton.addEventListener("click", closeLogs);
 document.querySelectorAll('input[name="build_format"]').forEach((input) => {
   input.addEventListener("change", syncBuildMode);
