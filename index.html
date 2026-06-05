@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ZeyWin Tax Invoice</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23f7f1df'/%3E%3Cpath d='M6 9h20v14H6z' fill='none' stroke='%2327201a' stroke-width='2'/%3E%3Cpath d='M9 13h14M9 17h10' stroke='%2327201a' stroke-width='2'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="receipt" aria-labelledby="report-title">
+      <header class="store-head">
+        <div class="stamp" aria-hidden="true">
+          <span>Zey</span>
+          <b>WIN</b>
+        </div>
+        <p>WORK LOVER'S MARKET</p>
+        <p>TELEGRAM GENERAL HOUSE</p>
+        <p>5187562045 ZEYWIN MALL</p>
+        <p>KYIV WORK CBD</p>
+        <p>TEL: TG @vladleopold</p>
+      </header>
+
+      <section class="invoice-title">
+        <h1 id="report-title">Tax Invoice</h1>
+        <span>(ZW5187562045)</span>
+      </section>
+
+      <section class="line-block meta-lines" aria-label="Метаданные">
+        <div><span>Cashier</span><b>@vladleopold</b></div>
+        <div><span>Client</span><b>ZeyWin General</b></div>
+        <div><span>Period</span><b>18-May-2026 / 03-Jun-2026</b></div>
+      </section>
+
+      <section class="line-block item-list" aria-label="Таблица активности">
+        <div class="item-head">
+          <span>DESCRIPTION</span>
+          <span>TIME</span>
+        </div>
+        <div id="activity-rows"></div>
+      </section>
+
+      <section class="line-block total-box" aria-label="Итоги">
+        <div><span>Non promo item total:</span><b id="subtotal-time">--</b></div>
+        <div><span>Invoice Nr(ZW5187562045)</span><b id="invoice-days">--</b></div>
+      </section>
+
+      <section class="line-block grand-total" aria-label="Total">
+        <span>Total:</span>
+        <b id="total-time">--</b>
+      </section>
+
+      <section class="line-block tender-lines" aria-label="Детали расчета">
+        <div><span>Messages:</span><b id="total-messages">--</b></div>
+        <div><span>Days:</span><b id="total-days">--</b></div>
+        <div><span>Session Gap:</span><b>75 min</b></div>
+        <div><span>Context Tail:</span><b>15 min</b></div>
+      </section>
+
+      <div class="barcode" aria-hidden="true"></div>
+      <footer>
+        <p id="generated-at">Date: --</p>
+        <p>Your Cashier Is: Владислав Чаплыгин</p>
+        <p>(App Ver = 1.25.33 ZW-Times = 2.)</p>
+        <strong>Thank You For Your Patronage</strong>
+        <strong>Cust Care: zey-win.github.io</strong>
+      </footer>
+    </main>
+
+    <script src="./report.js"></script>
+  </body>
+</html>
