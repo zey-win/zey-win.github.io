@@ -1020,7 +1020,8 @@ async function pollArtifact(build) {
   try {
     const params = new URLSearchParams({
       package_name: build.packageName,
-      min_version_code: String(Math.max(1, build.startVersionCode || 1))
+      min_version_code: String(Math.max(1, build.startVersionCode || 1)),
+      builder_request_id: build.requestId || build.id || ""
     });
     const response = await fetch(`${apiBase}/api/artifacts?${params}`, {
       headers: operatorHeaders(),
