@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-builder4" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-console1" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -176,6 +176,77 @@
       </div>
     </section>
 
+    <section class="console-shell" id="build-console" aria-hidden="true">
+      <aside class="console-rail" aria-label="Меню консоли">
+        <div class="console-brand">
+          <span aria-hidden="true"></span>
+          <div>
+            <b>ZeyWin</b>
+            <small>Android Builder</small>
+          </div>
+        </div>
+        <nav class="console-menu" aria-label="Разделы">
+          <button class="is-active" type="button" id="console-builds-tab">Сборки</button>
+          <button type="button" id="console-open-logs">Логи Action</button>
+          <a id="console-actions-link" href="https://github.com/zey-win/ci-cd/actions" target="_blank" rel="noreferrer">GitHub Actions</a>
+        </nav>
+        <button class="console-new-build" type="button" id="console-new-build">Новая сборка</button>
+      </aside>
+
+      <main class="console-main" aria-labelledby="console-title">
+        <header class="console-top">
+          <div>
+            <p id="console-summary">В работе: 0</p>
+            <h2 id="console-title">Консоль сборки</h2>
+          </div>
+          <div class="console-countdown" aria-live="polite">
+            <span id="console-remaining">осталось 10:00</span>
+            <i aria-hidden="true"><b id="console-progress"></b></i>
+          </div>
+        </header>
+
+        <div class="console-workspace">
+          <section class="console-builds" aria-label="Активные сборки">
+            <button class="active-build" id="active-build-card" type="button" aria-label="Открыть подробности активной сборки">
+              <span class="active-build-icon" id="console-build-icon" aria-hidden="true">
+                <i></i>
+              </span>
+              <span class="active-build-body">
+                <span class="active-build-kicker" id="console-build-kicker">ожидает запуска</span>
+                <b id="console-build-title">Android приложение</b>
+                <small id="console-build-meta">После нажатия Билд здесь появится активная сборка.</small>
+                <em id="console-build-log">Логи и статус появятся автоматически.</em>
+              </span>
+            </button>
+
+            <div class="console-artifact" id="console-artifact">
+              <span aria-hidden="true"></span>
+              <b>APK/AAB ещё не готов</b>
+            </div>
+
+            <div class="console-payload-card">
+              <h3>Отправлено в конвеер</h3>
+              <div class="console-payload-list" id="console-payload-list">
+                <p>Payload появится после запуска сборки.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="console-log-card" aria-label="Логи сборки">
+            <header>
+              <div>
+                <p>GitHub Actions</p>
+                <h3>Живые логи</h3>
+              </div>
+              <button class="secondary" type="button" id="console-refresh-logs">Обновить</button>
+            </header>
+            <div class="console-log-meta" id="console-log-meta">Run ещё не создан.</div>
+            <pre class="console-log-output" id="console-log-output">Нажмите Билд, чтобы открыть поток логов.</pre>
+          </section>
+        </div>
+      </main>
+    </section>
+
     <button class="build-toast" id="build-toast" type="button" aria-live="polite" aria-label="Открыть подробности сборки">
       <span class="build-toast-icon" id="build-toast-icon" aria-hidden="true"></span>
       <span class="build-toast-body">
@@ -204,6 +275,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-builder4"></script>
+    <script src="./builder.js?v=20260605-console1"></script>
   </body>
 </html>
