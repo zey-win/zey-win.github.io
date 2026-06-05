@@ -10,6 +10,10 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -17,8 +21,12 @@ body {
   color: var(--ink);
   font-family: "Courier New", Courier, monospace;
   background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 241, 202, 0.17), transparent 34%),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 21px) 0 0 / 34px 34px,
     linear-gradient(90deg, rgba(255, 255, 255, 0.04), transparent 12%, rgba(0, 0, 0, 0.13) 22%, transparent 31%) 0 0 / 180px 100%,
     linear-gradient(90deg, #2c160f, #5b3424 18%, #351b12 39%, #7a4a31 57%, #2a150f 82%);
+  perspective: 1300px;
+  overflow-x: hidden;
 }
 
 .receipt {
@@ -31,9 +39,14 @@ body {
     linear-gradient(90deg, rgba(0, 0, 0, 0.08), transparent 7%, transparent 93%, rgba(0, 0, 0, 0.1)),
     var(--paper);
   box-shadow:
-    0 24px 38px rgba(0, 0, 0, 0.44),
+    0 18px 18px rgba(0, 0, 0, 0.28),
+    0 42px 58px rgba(0, 0, 0, 0.4),
     inset 0 0 38px rgba(70, 55, 42, 0.13);
   position: relative;
+  transform-origin: 50% 10%;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, filter, box-shadow;
 }
 
 .receipt::before,
@@ -269,9 +282,84 @@ footer strong {
   mix-blend-mode: multiply;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .receipt {
+    animation:
+      receipt-peel 1450ms cubic-bezier(0.2, 0.85, 0.25, 1) both,
+      receipt-float 5200ms ease-in-out 1450ms infinite;
+  }
+
+  .receipt::before {
+    animation: paper-edge-lift 1450ms cubic-bezier(0.2, 0.85, 0.25, 1) both;
+  }
+}
+
+@keyframes receipt-peel {
+  0% {
+    transform: translateY(30px) rotateX(12deg) rotateZ(-1.6deg) scale(0.982);
+    filter: brightness(0.95) saturate(0.9);
+    box-shadow:
+      0 6px 8px rgba(0, 0, 0, 0.34),
+      0 14px 18px rgba(0, 0, 0, 0.24),
+      inset 0 0 38px rgba(70, 55, 42, 0.18);
+  }
+
+  54% {
+    transform: translateY(-7px) rotateX(-2deg) rotateZ(0.35deg) scale(1.006);
+    filter: brightness(1.025);
+    box-shadow:
+      0 27px 28px rgba(0, 0, 0, 0.31),
+      0 66px 76px rgba(0, 0, 0, 0.42),
+      inset 0 0 38px rgba(70, 55, 42, 0.12);
+  }
+
+  100% {
+    transform: translateY(0) rotateX(0deg) rotateZ(0deg) scale(1);
+    filter: none;
+    box-shadow:
+      0 18px 18px rgba(0, 0, 0, 0.28),
+      0 42px 58px rgba(0, 0, 0, 0.4),
+      inset 0 0 38px rgba(70, 55, 42, 0.13);
+  }
+}
+
+@keyframes receipt-float {
+  0%,
+  100% {
+    transform: translateY(0) rotateZ(0deg);
+    box-shadow:
+      0 18px 18px rgba(0, 0, 0, 0.28),
+      0 42px 58px rgba(0, 0, 0, 0.4),
+      inset 0 0 38px rgba(70, 55, 42, 0.13);
+  }
+
+  50% {
+    transform: translateY(-5px) rotateZ(0.18deg);
+    box-shadow:
+      0 24px 22px rgba(0, 0, 0, 0.26),
+      0 56px 74px rgba(0, 0, 0, 0.42),
+      inset 0 0 38px rgba(70, 55, 42, 0.12);
+  }
+}
+
+@keyframes paper-edge-lift {
+  0% {
+    transform: translateY(-1px) rotate(180deg) scaleY(0.92);
+  }
+
+  55% {
+    transform: translateY(-5px) rotate(180deg) scaleY(1.05);
+  }
+
+  100% {
+    transform: translateY(-1px) rotate(180deg) scaleY(1);
+  }
+}
+
 @media (max-width: 480px) {
   body {
-    padding: 0;
+    padding: 10px 7px 20px;
+    perspective: 900px;
   }
 
   .receipt {
