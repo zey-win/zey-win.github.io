@@ -1071,6 +1071,12 @@ select:focus {
   color: var(--muted);
 }
 
+.console-artifact-body {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
 .console-artifact span {
   width: 10px;
   height: 10px;
@@ -1088,6 +1094,30 @@ select:focus {
 .console-artifact.is-ready span {
   background: var(--green);
   box-shadow: 0 0 0 6px rgba(25, 167, 111, 0.18);
+}
+
+.artifact-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.artifact-downloads[hidden] {
+  display: none;
+}
+
+.artifact-download {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 7px 11px;
+  border: 1px solid rgba(31, 111, 235, 0.24);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
 }
 
 .console-payload-card {

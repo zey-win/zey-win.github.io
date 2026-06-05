@@ -46,6 +46,7 @@ const consoleArtifact = document.querySelector("#console-artifact");
 const consolePayloadList = document.querySelector("#console-payload-list");
 const consoleLogMeta = document.querySelector("#console-log-meta");
 const consoleLogOutput = document.querySelector("#console-log-output");
+const consoleDownloads = document.querySelector("#console-downloads");
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "");
 const configuredOperatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const operatorStorageKey = "zeywin_builder_operator_key";
@@ -226,7 +227,8 @@ function createBuild(payload) {
     logOutput: "GitHub Actions ещё создаёт run. Как только run появится, здесь будут короткие живые логи.",
     artifactText: "APK/AAB ещё не готов",
     artifactReady: false,
-    releaseUrl: ""
+    releaseUrl: "",
+    artifactDownloads: []
   };
 }
 
@@ -331,6 +333,7 @@ function renderSelectedBuildDetails() {
     consoleProgress.style.width = "0%";
     consoleArtifact.classList.remove("is-ready");
     consoleArtifact.querySelector("b").textContent = "APK/AAB ещё не готов";
+    renderArtifactDownloads(null);
     consolePayloadList.innerHTML = '<p>Payload появится после запуска сборки.</p>';
     consoleLogMeta.textContent = "Run ещё не создан.";
     consoleLogOutput.textContent = "Нажмите Билд, чтобы открыть поток логов.";
@@ -342,6 +345,7 @@ function renderSelectedBuildDetails() {
   renderConsolePayload(build.payload);
   consoleArtifact.classList.toggle("is-ready", build.artifactReady);
   consoleArtifact.querySelector("b").textContent = build.artifactText;
+  renderArtifactDownloads(build);
   consoleLogMeta.innerHTML = build.logMeta;
   consoleLogOutput.textContent = build.logOutput;
   consoleActionsLink.href = build.releaseUrl || build.actionUrl;
@@ -367,6 +371,43 @@ function renderSelectedBuildDetails() {
       ? "выбранная сборка с ошибкой"
       : `выбрана: осталось ${formatSeconds(build.secondsLeft)}`;
   updateConsoleSummary();
+}
+
+function normalizeArtifactDownloads(artifact) {
+  const links = [];
+  const seen = new Set();
+
+  function push(type, name, url) {
+    if (!url) return;
+    const label = type || "Файл";
+    const filename = name || `${label.toLowerCase()}.android`;
+    const key = `${label}|${filename}|${url}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    links.push({ type: label, name: filename, url });
+  }
+
+  (artifact?.assets || []).forEach((asset) => push(asset.type, asset.name, asset.downloadUrl));
+  push("APK", artifact?.apkAsset, artifact?.apkDownloadUrl);
+  push("AAB", artifact?.aabAsset, artifact?.aabDownloadUrl);
+  if (links.length === 0) {
+    push(artifact?.type, artifact?.assetName, artifact?.downloadUrl);
+  }
+
+  return links;
+}
+
+function renderArtifactDownloads(build) {
+  if (!consoleDownloads) return;
+  const downloads = build?.artifactDownloads || [];
+  consoleDownloads.hidden = downloads.length === 0;
+  consoleDownloads.innerHTML = downloads
+    .map((item) => `
+      <a class="artifact-download" href="${escapeHtml(item.url)}" download="${escapeHtml(item.name)}" target="_blank" rel="noreferrer">
+        Скачать ${escapeHtml(item.type)}
+      </a>
+    `)
+    .join("");
 }
 
 function selectBuild(id, { openDetails = false } = {}) {
@@ -939,9 +980,10 @@ async function submitBuild(event) {
   }
 }
 
-function setArtifactSignal(build, ready, text, url = "") {
+function setArtifactSignal(build, ready, text, url = "", downloads = []) {
   build.artifactReady = ready;
   build.artifactText = text;
+  build.artifactDownloads = ready ? downloads : [];
   if (ready) {
     build.state = "ready";
     build.releaseUrl = url || build.releaseUrl;
@@ -953,6 +995,7 @@ function setArtifactSignal(build, ready, text, url = "") {
     }
     consoleArtifact.classList.toggle("is-ready", ready);
     consoleArtifact.querySelector("b").textContent = text;
+    renderArtifactDownloads(build);
     if (url) {
       consoleActionsLink.href = url;
     }
@@ -990,9 +1033,10 @@ async function pollArtifact(build) {
     if (data.ready && data.artifact) {
       clearInterval(build.artifactRefreshId);
       const label = `${data.artifact.type} готов: v${data.artifact.versionCode}`;
-      setArtifactSignal(build, true, label, data.artifact.releaseUrl);
-      updateBuildToast(build, label, "Готово. Нажмите, чтобы открыть подробности сборки.");
-      statusText.textContent = `${label}. Можно открыть GitHub Release.`;
+      const downloads = normalizeArtifactDownloads(data.artifact);
+      setArtifactSignal(build, true, label, data.artifact.releaseUrl, downloads);
+      updateBuildToast(build, label, downloads.length ? "Готово. Ссылки APK/AAB доступны в консоли." : "Готово. Нажмите, чтобы открыть подробности сборки.");
+      statusText.textContent = downloads.length ? `${label}. Можно скачать файлы APK/AAB.` : `${label}. Можно открыть GitHub Release.`;
     }
   } catch (error) {
     setArtifactSignal(build, false, friendlyError(error.message));
