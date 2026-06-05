@@ -50,7 +50,7 @@ fetch("./activity-data.json", { cache: "no-store" })
     generatedAtEl.textContent = `Date: ${generatedStamp(data.generated_at)}`;
 
     rowsEl.innerHTML = data.rows
-      .map((row, index) => {
+      .map((row) => {
         const description = row.description.replace(/^\d{2}\.\d{2}\.\d{4}\s*-\s*/, "");
         const sessions = row.sessions.join(", ");
         const heat = Math.round(100 - row.intensity * 18);
@@ -58,7 +58,7 @@ fetch("./activity-data.json", { cache: "no-store" })
         return `
           <article class="receipt-item" style="--paper-light:${heat}%">
             <div class="item-main">
-              <span class="sku">${String(index + 1).padStart(2, "0")} ${dateStamp(row.date)}</span>
+              <span class="sku">${dateStamp(row.date)}</span>
               <p>${esc(description)}</p>
               <b>${esc(compactTime(row.spent_time))}</b>
             </div>
