@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-console1" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-parallel1" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -207,17 +207,9 @@
 
         <div class="console-workspace">
           <section class="console-builds" aria-label="Активные сборки">
-            <button class="active-build" id="active-build-card" type="button" aria-label="Открыть подробности активной сборки">
-              <span class="active-build-icon" id="console-build-icon" aria-hidden="true">
-                <i></i>
-              </span>
-              <span class="active-build-body">
-                <span class="active-build-kicker" id="console-build-kicker">ожидает запуска</span>
-                <b id="console-build-title">Android приложение</b>
-                <small id="console-build-meta">После нажатия Билд здесь появится активная сборка.</small>
-                <em id="console-build-log">Логи и статус появятся автоматически.</em>
-              </span>
-            </button>
+            <div class="active-build-list" id="active-build-list">
+              <p class="active-build-empty">После нажатия Билд здесь появятся параллельные сборки.</p>
+            </div>
 
             <div class="console-artifact" id="console-artifact">
               <span aria-hidden="true"></span>
@@ -275,6 +267,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-console1"></script>
+    <script src="./builder.js?v=20260605-parallel1"></script>
   </body>
 </html>

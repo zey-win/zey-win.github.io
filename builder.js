@@ -39,12 +39,7 @@ const consoleActionsLink = document.querySelector("#console-actions-link");
 const consoleSummary = document.querySelector("#console-summary");
 const consoleRemaining = document.querySelector("#console-remaining");
 const consoleProgress = document.querySelector("#console-progress");
-const activeBuildCard = document.querySelector("#active-build-card");
-const consoleBuildIcon = document.querySelector("#console-build-icon");
-const consoleBuildKicker = document.querySelector("#console-build-kicker");
-const consoleBuildTitle = document.querySelector("#console-build-title");
-const consoleBuildMeta = document.querySelector("#console-build-meta");
-const consoleBuildLog = document.querySelector("#console-build-log");
+const activeBuildList = document.querySelector("#active-build-list");
 const consoleArtifact = document.querySelector("#console-artifact");
 const consolePayloadList = document.querySelector("#console-payload-list");
 const consoleLogMeta = document.querySelector("#console-log-meta");
@@ -52,17 +47,12 @@ const consoleLogOutput = document.querySelector("#console-log-output");
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "");
 
 let selectedIconDataUrl = "";
-let timerId = 0;
 let logRefreshId = 0;
-let toastLogRefreshId = 0;
-let artifactRefreshId = 0;
-let currentRequestId = "";
-let currentRunId = "";
-let currentPackageName = "";
-let startVersionCode = 0;
 let versionLoadId = 0;
 let payloadAnimationTimer = 0;
-let currentBuildStartedAt = 0;
+let builds = [];
+let selectedBuildId = "";
+let toastBuildId = "";
 
 iconEditor.inert = true;
 
@@ -128,23 +118,59 @@ function closeBuilder({ restoreFocus = true } = {}) {
   }
 }
 
-function openConsole(payload) {
+function createBuild(payload) {
+  return {
+    id: payload.builder_request_id,
+    requestId: payload.builder_request_id,
+    runId: "",
+    payload,
+    packageName: payload.package_name,
+    startVersionCode: payload.build_format === "apk" ? 1 : Number(payload.version_code || 0),
+    startedAt: Date.now(),
+    totalSeconds: 600,
+    secondsLeft: 600,
+    timerId: 0,
+    logRefreshId: 0,
+    artifactRefreshId: 0,
+    actionUrl: "https://github.com/zey-win/ci-cd/actions",
+    iconDataUrl: selectedIconDataUrl,
+    state: "queued",
+    meta: `${formatBuildFormat(payload.build_format)} · ожидаю GitHub Actions`,
+    logLine: "Run ещё создаётся. Логи появятся автоматически.",
+    logMeta: `Ищу workflow run: ${payload.builder_request_id}`,
+    logOutput: "GitHub Actions ещё создаёт run. Как только run появится, здесь будут короткие живые логи.",
+    artifactText: "APK/AAB ещё не готов",
+    artifactReady: false,
+    releaseUrl: ""
+  };
+}
+
+function getSelectedBuild() {
+  return builds.find((build) => build.id === selectedBuildId) || builds[0] || null;
+}
+
+function getBuild(id) {
+  return builds.find((build) => build.id === id) || null;
+}
+
+function buildProgress(build) {
+  if (!build) return 0;
+  if (build.artifactReady) return 100;
+  const total = Math.max(1, build.totalSeconds || 600);
+  return Math.min(100, Math.max(4, ((total - build.secondsLeft) / total) * 100));
+}
+
+function formatSeconds(secondsLeft) {
+  const minutes = Math.floor(Math.max(0, secondsLeft) / 60);
+  const seconds = Math.max(0, secondsLeft) % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function openConsole(build) {
   closeBuilder({ restoreFocus: false });
   consoleShell.classList.add("is-open");
   consoleShell.setAttribute("aria-hidden", "false");
-  renderConsolePayload(payload);
-  updateConsoleBuild(`${formatBuildFormat(payload.build_format)} · ожидаю GitHub Actions`, "Run ещё создаётся. Логи появятся автоматически.");
-  updateConsoleArtifact(false, "APK/AAB ещё не готов");
-  consoleBuildTitle.textContent = payload.app_name || "Android приложение";
-  consoleBuildKicker.textContent = payload.package_name || "package не указан";
-  consoleBuildIcon.style.backgroundImage = selectedIconDataUrl ? `url("${selectedIconDataUrl}")` : "";
-  activeBuildCard.classList.add("is-running");
-  activeBuildCard.classList.remove("is-ready", "is-failed");
-  consoleSummary.textContent = "В работе: 1";
-  consoleRemaining.textContent = "осталось 10:00";
-  consoleProgress.style.width = "4%";
-  consoleLogMeta.textContent = "Ищу workflow run...";
-  consoleLogOutput.textContent = "GitHub Actions ещё создаёт run. Как только run появится, здесь будут короткие живые логи.";
+  selectBuild(build.id, { openDetails: false });
 }
 
 function renderConsolePayload(payload) {
@@ -162,41 +188,119 @@ function renderConsolePayload(payload) {
   consolePayloadList.innerHTML = visible
     .map(([key, value]) => `
       <div class="console-payload-item">
-        <span>${key}</span>
-        <b>${maskValue(key, String(value || ""))}</b>
+        <span>${escapeHtml(key)}</span>
+        <b>${escapeHtml(maskValue(key, String(value || "")))}</b>
       </div>
     `)
     .join("");
 }
 
-function updateConsoleBuild(meta, logLine = "") {
-  if (!consoleShell) return;
-  consoleBuildMeta.textContent = meta;
-  if (logLine) {
-    consoleBuildLog.textContent = logLine;
+function renderBuildList() {
+  if (!activeBuildList) return;
+  if (builds.length === 0) {
+    activeBuildList.innerHTML = '<p class="active-build-empty">После нажатия Билд здесь появятся параллельные сборки.</p>';
+    return;
+  }
+
+  activeBuildList.innerHTML = builds
+    .map((build, index) => {
+      const stateClass = build.artifactReady ? "is-ready" : build.state === "failed" ? "is-failed" : "is-running";
+      const selectedClass = build.id === selectedBuildId ? "is-selected" : "";
+      const progress = buildProgress(build).toFixed(2);
+      const position = builds.length - index;
+      return `
+        <button class="active-build ${stateClass} ${selectedClass}" type="button" data-build-id="${escapeHtml(build.id)}" aria-label="Открыть логи сборки ${escapeHtml(maskValue("request", build.requestId))}">
+          <span class="active-build-icon" aria-hidden="true" style="${build.iconDataUrl ? `background-image: url('${build.iconDataUrl.replace(/'/g, "%27")}')` : ""}">
+            <i></i>
+          </span>
+          <span class="active-build-body">
+            <span class="active-build-kicker">${escapeHtml(build.payload.package_name || "package не указан")}</span>
+            <b>${escapeHtml(build.payload.app_name || "Android приложение")}</b>
+            <small>${escapeHtml(build.meta)}</small>
+            <em>${escapeHtml(build.logLine)}</em>
+            <span class="active-build-footer">
+              <span>#${position} · ${escapeHtml(formatBuildFormat(build.payload.build_format))}</span>
+              <span>${escapeHtml(build.artifactReady ? "готово" : build.state === "failed" ? "ошибка" : formatSeconds(build.secondsLeft))}</span>
+            </span>
+            <span class="active-build-progress" aria-hidden="true"><span style="width: ${progress}%"></span></span>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function updateConsoleSummary() {
+  const active = builds.filter((build) => !build.artifactReady && build.state !== "failed").length;
+  const ready = builds.filter((build) => build.artifactReady).length;
+  const failed = builds.filter((build) => build.state === "failed").length;
+  const parts = [`В работе: ${active}`, `готово: ${ready}`];
+  if (failed) parts.push(`ошибок: ${failed}`);
+  consoleSummary.textContent = builds.length ? parts.join(" · ") : "В работе: 0";
+}
+
+function renderSelectedBuildDetails() {
+  const build = getSelectedBuild();
+  if (!build) {
+    consoleRemaining.textContent = "осталось 10:00";
+    consoleProgress.style.width = "0%";
+    consoleArtifact.classList.remove("is-ready");
+    consoleArtifact.querySelector("b").textContent = "APK/AAB ещё не готов";
+    consolePayloadList.innerHTML = '<p>Payload появится после запуска сборки.</p>';
+    consoleLogMeta.textContent = "Run ещё не создан.";
+    consoleLogOutput.textContent = "Нажмите Билд, чтобы открыть поток логов.";
+    consoleActionsLink.href = "https://github.com/zey-win/ci-cd/actions";
+    updateConsoleSummary();
+    return;
+  }
+
+  renderConsolePayload(build.payload);
+  consoleArtifact.classList.toggle("is-ready", build.artifactReady);
+  consoleArtifact.querySelector("b").textContent = build.artifactText;
+  consoleLogMeta.innerHTML = build.logMeta;
+  consoleLogOutput.textContent = build.logOutput;
+  consoleActionsLink.href = build.releaseUrl || build.actionUrl;
+  actionsLink.href = build.releaseUrl || build.actionUrl;
+  artifactSignal.classList.toggle("is-ready", build.artifactReady);
+  artifactSignal.querySelector("b").textContent = build.artifactText;
+  const progress = buildProgress(build);
+  const progressDegrees = Math.round((progress / 100) * 360);
+  timerValue.textContent = formatSeconds(build.secondsLeft);
+  timerRing.style.setProperty("--progress", `${progressDegrees}deg`);
+  consoleProgress.style.width = `${progress.toFixed(2)}%`;
+  consoleRemaining.textContent = build.artifactReady
+    ? "выбранная сборка готова"
+    : build.state === "failed"
+      ? "выбранная сборка с ошибкой"
+      : `выбрана: осталось ${formatSeconds(build.secondsLeft)}`;
+  updateConsoleSummary();
+}
+
+function selectBuild(id, { openDetails = false } = {}) {
+  selectedBuildId = id;
+  renderBuildList();
+  renderSelectedBuildDetails();
+  if (openDetails) {
+    openLogs();
   }
 }
 
-function updateConsoleArtifact(ready, text, url = "") {
-  if (!consoleArtifact) return;
-  consoleArtifact.classList.toggle("is-ready", ready);
-  consoleArtifact.querySelector("b").textContent = text;
-  activeBuildCard.classList.toggle("is-ready", ready);
-  activeBuildCard.classList.toggle("is-running", !ready && Boolean(currentRequestId));
-  if (ready) {
-    consoleSummary.textContent = "Готово: 1";
-    consoleRemaining.textContent = "artifact готов";
-    consoleProgress.style.width = "100%";
+function updateBuildCard(build) {
+  if (build.id === selectedBuildId) {
+    renderSelectedBuildDetails();
+  } else {
+    updateConsoleSummary();
   }
-  if (url) {
-    consoleActionsLink.href = url;
-  }
+  renderBuildList();
 }
 
-function setConsoleLogState(meta, text) {
-  if (!consoleLogMeta || !consoleLogOutput) return;
-  consoleLogMeta.innerHTML = meta;
-  consoleLogOutput.textContent = text;
+function setBuildLogState(build, meta, text) {
+  build.logMeta = meta;
+  build.logOutput = text;
+  if (build.id === selectedBuildId) {
+    consoleLogMeta.innerHTML = meta;
+    consoleLogOutput.textContent = text;
+  }
 }
 
 function toggleIconEditor() {
@@ -245,6 +349,15 @@ function maskValue(key, value) {
     return `${value.slice(0, 10)}...${value.slice(-5)}`;
   }
   return value;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function collectPayload() {
@@ -317,53 +430,64 @@ function renderPayload(payload) {
   });
 }
 
-function setTimer(secondsLeft, totalSeconds) {
+function setBuildTimer(build, secondsLeft) {
+  build.secondsLeft = secondsLeft;
+  const totalSeconds = build.totalSeconds || 600;
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
-  timerValue.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+  if (build.id === selectedBuildId) {
+    timerValue.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
   const progress = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 360);
-  timerRing.style.setProperty("--progress", `${progress}deg`);
+  if (build.id === selectedBuildId) {
+    timerRing.style.setProperty("--progress", `${progress}deg`);
+  }
   const percent = ((totalSeconds - secondsLeft) / totalSeconds) * 100;
   const progressWidth = `${secondsLeft === 0 ? 100 : Math.max(4, percent).toFixed(2)}%`;
-  buildToastProgress.style.width = progressWidth;
-  consoleProgress.style.width = progressWidth;
-  consoleRemaining.textContent = secondsLeft === 0
-    ? "таймер завершился"
-    : `осталось ${minutes}:${String(seconds).padStart(2, "0")}`;
-  if (!activeBuildCard.classList.contains("is-ready")) {
-    consoleSummary.textContent = `В работе: 1 · осталось ${minutes}:${String(seconds).padStart(2, "0")}`;
+  if (build.id === toastBuildId) {
+    buildToastProgress.style.width = progressWidth;
   }
+  updateBuildCard(build);
 }
 
-function startTimer(totalSeconds = 600) {
-  clearInterval(timerId);
+function startBuildTimer(build, totalSeconds = 600) {
+  clearInterval(build.timerId);
+  build.totalSeconds = totalSeconds;
   let left = totalSeconds;
-  setTimer(left, totalSeconds);
-  timerId = setInterval(() => {
+  setBuildTimer(build, left);
+  build.timerId = setInterval(() => {
     left = Math.max(0, left - 1);
-    setTimer(left, totalSeconds);
+    setBuildTimer(build, left);
     if (left === 0) {
-      clearInterval(timerId);
+      clearInterval(build.timerId);
     }
   }, 1000);
 }
 
-function showBuildToast(payload) {
-  currentBuildStartedAt = Date.now();
-  buildToastTitle.textContent = payload.app_name || "Сборка Android";
-  buildToastMeta.textContent = `${formatBuildFormat(payload.build_format)} · ожидаю GitHub Actions`;
-  buildToastLog.textContent = "Run ещё создаётся. Нажмите, чтобы открыть подробности.";
+function showBuildToast(build) {
+  toastBuildId = build.id;
+  buildToastTitle.textContent = build.payload.app_name || "Сборка Android";
+  buildToastMeta.textContent = build.meta;
+  buildToastLog.textContent = build.logLine;
   buildToastProgress.style.width = "4%";
-  buildToastIcon.style.backgroundImage = selectedIconDataUrl ? `url("${selectedIconDataUrl}")` : "";
+  buildToastIcon.style.backgroundImage = build.iconDataUrl ? `url("${build.iconDataUrl}")` : "";
   buildToast.classList.add("is-visible");
 }
 
-function updateBuildToast(meta, logLine = "") {
+function updateBuildToast(build, meta, logLine = "") {
+  build.meta = meta;
+  if (logLine) {
+    build.logLine = logLine;
+  }
+  if (build.id !== toastBuildId) {
+    updateBuildCard(build);
+    return;
+  }
   buildToastMeta.textContent = meta;
   if (logLine) {
     buildToastLog.textContent = logLine;
   }
-  updateConsoleBuild(meta, logLine);
+  updateBuildCard(build);
 }
 
 function lastUsefulLogLine(text) {
@@ -385,8 +509,8 @@ function shortLogFromJobs(data) {
   return line ? `${activeJob.name}: ${line}` : `${activeJob.name}: ${activeJob.status || "ожидает"}`;
 }
 
-async function fetchRunLogs() {
-  const runId = await findRun();
+async function fetchRunLogs(build) {
+  const runId = await findRun(build);
   if (!runId) {
     return { run: null, jobs: [] };
   }
@@ -402,22 +526,23 @@ async function fetchRunLogs() {
   return data;
 }
 
-function startToastLogPolling() {
-  clearInterval(toastLogRefreshId);
-  refreshToastLogs();
-  toastLogRefreshId = setInterval(refreshToastLogs, 7000);
+function startBuildLogPolling(build) {
+  clearInterval(build.logRefreshId);
+  refreshBuildLogs(build);
+  build.logRefreshId = setInterval(() => refreshBuildLogs(build), 7000);
 }
 
-async function refreshToastLogs() {
-  if (!currentRequestId) return;
+async function refreshBuildLogs(build) {
+  if (!build?.requestId) return;
 
   try {
-    const data = await fetchRunLogs();
+    const data = await fetchRunLogs(build);
     if (!data.run) {
-      const seconds = Math.max(1, Math.round((Date.now() - currentBuildStartedAt) / 1000));
-      updateBuildToast(`ищу workflow run · ${seconds}s`, "GitHub Actions ещё создаёт run.");
-      setConsoleLogState(
-        `Ищу workflow run: ${currentRequestId}`,
+      const seconds = Math.max(1, Math.round((Date.now() - build.startedAt) / 1000));
+      updateBuildToast(build, `ищу workflow run · ${seconds}s`, "GitHub Actions ещё создаёт run.");
+      setBuildLogState(
+        build,
+        `Ищу workflow run: ${build.requestId}`,
         "GitHub Actions ещё создаёт run. Обновляю автоматически..."
       );
       return;
@@ -425,8 +550,12 @@ async function refreshToastLogs() {
 
     const state = data.run.conclusion || data.run.status || "unknown";
     const shortLog = shortLogFromJobs(data);
-    updateBuildToast(`Run #${data.run.runNumber} · ${state}`, shortLog);
-    setConsoleLogState(
+    if (!build.artifactReady) {
+      build.state = data.run.status === "completed" ? "artifact_wait" : "running";
+    }
+    updateBuildToast(build, `Run #${data.run.runNumber} · ${state}`, shortLog);
+    setBuildLogState(
+      build,
       `<a href="${data.run.htmlUrl}" target="_blank" rel="noreferrer">Run #${data.run.runNumber}</a> · ${data.run.status || "unknown"}${data.run.conclusion ? ` · ${data.run.conclusion}` : ""}`,
       (data.jobs || [])
         .map((job) => {
@@ -438,20 +567,18 @@ async function refreshToastLogs() {
         .join("\n\n") || shortLog
     );
     if (data.run.status === "completed") {
-      clearInterval(toastLogRefreshId);
+      clearInterval(build.logRefreshId);
       if (data.run.conclusion && data.run.conclusion !== "success") {
-        activeBuildCard.classList.remove("is-running");
-        activeBuildCard.classList.add("is-failed");
-        consoleSummary.textContent = `Ошибка сборки: ${data.run.conclusion}`;
-        consoleRemaining.textContent = "проверьте логи";
-      } else if (!activeBuildCard.classList.contains("is-ready")) {
-        consoleSummary.textContent = "Action завершён · ищу artifact";
-        consoleRemaining.textContent = "проверяю release";
+        build.state = "failed";
+        updateBuildCard(build);
+      } else if (!build.artifactReady) {
+        build.state = "artifact_wait";
+        updateBuildCard(build);
       }
     }
   } catch (error) {
-    updateBuildToast("Ошибка логов", error.message);
-    setConsoleLogState("Ошибка логов", error.message);
+    updateBuildToast(build, "Ошибка логов", error.message);
+    setBuildLogState(build, "Ошибка логов", error.message);
   }
 }
 
@@ -488,16 +615,15 @@ async function loadRepos() {
 async function submitBuild(event) {
   event.preventDefault();
   const payload = collectPayload();
-  currentRequestId = payload.builder_request_id;
-  currentRunId = "";
-  currentPackageName = payload.package_name;
-  startVersionCode = payload.build_format === "apk" ? 1 : Number(payload.version_code || 0);
+  const build = createBuild(payload);
+  builds = [build, ...builds];
+  selectedBuildId = build.id;
   renderPayload(payload);
-  showBuildToast(payload);
-  openConsole(payload);
-  startTimer(600);
-  startToastLogPolling();
-  setArtifactSignal(false, "APK/AAB ещё не готов");
+  openConsole(build);
+  showBuildToast(build);
+  startBuildTimer(build, 600);
+  startBuildLogPolling(build);
+  setArtifactSignal(build, false, "APK/AAB ещё не готов");
   statusText.textContent = "Payload ушёл в backend. Жду GitHub Actions...";
 
   try {
@@ -515,57 +641,70 @@ async function submitBuild(event) {
     }
 
     actionsLink.href = data.workflow?.workflowUrl || "https://github.com/zey-win/ci-cd/actions";
-    consoleActionsLink.href = actionsLink.href;
-    currentRequestId = data.requestId || currentRequestId;
-    currentRunId = data.run?.id ? String(data.run.id) : "";
+    build.actionUrl = actionsLink.href;
+    build.requestId = data.requestId || build.requestId;
+    build.runId = data.run?.id ? String(data.run.id) : "";
     if (data.run?.htmlUrl) {
       actionsLink.href = data.run.htmlUrl;
-      consoleActionsLink.href = data.run.htmlUrl;
+      build.actionUrl = data.run.htmlUrl;
     }
-    if (data.latestArtifact?.versionCode && !startVersionCode) {
-      startVersionCode = Number(data.latestArtifact.versionCode) + 1;
+    if (data.latestArtifact?.versionCode && !build.startVersionCode) {
+      build.startVersionCode = Number(data.latestArtifact.versionCode) + 1;
     }
-    startArtifactPolling();
-    startToastLogPolling();
+    startArtifactPolling(build);
+    startBuildLogPolling(build);
     statusText.textContent = data.icon?.path
       ? `Иконка записана, сборка отправлена в Actions. Нажмите на круг, чтобы смотреть логи.`
       : `Сборка отправлена в Actions. Нажмите на круг, чтобы смотреть логи.`;
-    updateConsoleBuild(
-      currentRunId ? `Run найден · ${formatBuildFormat(payload.build_format)}` : `${formatBuildFormat(payload.build_format)} · Actions запущен`,
+    updateBuildToast(
+      build,
+      build.runId ? `Run найден · ${formatBuildFormat(payload.build_format)}` : `${formatBuildFormat(payload.build_format)} · Actions запущен`,
       data.icon?.path ? "Иконка записана, сборка отправлена в GitHub Actions." : "Сборка отправлена в GitHub Actions."
     );
   } catch (error) {
     statusText.textContent = error.message;
-    activeBuildCard.classList.remove("is-running");
-    activeBuildCard.classList.add("is-failed");
-    consoleSummary.textContent = "Ошибка запуска: 1";
-    updateBuildToast("Ошибка запуска", error.message);
-    setConsoleLogState("Backend не запустил сборку", error.message);
+    build.state = "failed";
+    updateBuildToast(build, "Ошибка запуска", error.message);
+    setBuildLogState(build, "Backend не запустил сборку", error.message);
+    updateBuildCard(build);
   }
 }
 
-function setArtifactSignal(ready, text, url = "") {
-  artifactSignal.classList.toggle("is-ready", ready);
-  artifactSignal.querySelector("b").textContent = text;
-  updateConsoleArtifact(ready, text, url);
+function setArtifactSignal(build, ready, text, url = "") {
+  build.artifactReady = ready;
+  build.artifactText = text;
+  if (ready) {
+    build.state = "ready";
+    build.releaseUrl = url || build.releaseUrl;
+  }
+  if (build.id === selectedBuildId) {
+    artifactSignal.classList.toggle("is-ready", ready);
+    artifactSignal.querySelector("b").textContent = text;
+    consoleArtifact.classList.toggle("is-ready", ready);
+    consoleArtifact.querySelector("b").textContent = text;
+    if (url) {
+      consoleActionsLink.href = url;
+    }
+  }
   if (url) {
     actionsLink.href = url;
   }
+  updateBuildCard(build);
 }
 
-function startArtifactPolling() {
-  clearInterval(artifactRefreshId);
-  pollArtifact();
-  artifactRefreshId = setInterval(pollArtifact, 15000);
+function startArtifactPolling(build) {
+  clearInterval(build.artifactRefreshId);
+  pollArtifact(build);
+  build.artifactRefreshId = setInterval(() => pollArtifact(build), 15000);
 }
 
-async function pollArtifact() {
-  if (!currentPackageName) return;
+async function pollArtifact(build) {
+  if (!build?.packageName) return;
 
   try {
     const params = new URLSearchParams({
-      package_name: currentPackageName,
-      min_version_code: String(Math.max(1, startVersionCode || 1))
+      package_name: build.packageName,
+      min_version_code: String(Math.max(1, build.startVersionCode || 1))
     });
     const response = await fetch(`${apiBase}/api/artifacts?${params}`, {
       headers: operatorHeaders(),
@@ -576,18 +715,23 @@ async function pollArtifact() {
       throw new Error(data.error || "Не удалось проверить APK/AAB.");
     }
     if (data.ready && data.artifact) {
-      clearInterval(artifactRefreshId);
+      clearInterval(build.artifactRefreshId);
       const label = `${data.artifact.type} готов: v${data.artifact.versionCode}`;
-      setArtifactSignal(true, label, data.artifact.releaseUrl);
-      updateBuildToast(label, "Готово. Нажмите, чтобы открыть подробности сборки.");
+      setArtifactSignal(build, true, label, data.artifact.releaseUrl);
+      updateBuildToast(build, label, "Готово. Нажмите, чтобы открыть подробности сборки.");
       statusText.textContent = `${label}. Можно открыть GitHub Release.`;
     }
   } catch (error) {
-    setArtifactSignal(false, error.message);
+    setArtifactSignal(build, false, error.message);
   }
 }
 
-function openLogs() {
+function openLogs(buildId = selectedBuildId) {
+  if (buildId) {
+    selectedBuildId = buildId;
+    renderBuildList();
+    renderSelectedBuildDetails();
+  }
   logShell.classList.add("is-open");
   logShell.setAttribute("aria-hidden", "false");
   refreshLogs();
@@ -601,9 +745,9 @@ function closeLogs() {
   clearInterval(logRefreshId);
 }
 
-async function findRun() {
-  if (currentRunId || !currentRequestId) return currentRunId;
-  const response = await fetch(`${apiBase}/api/runs?request_id=${encodeURIComponent(currentRequestId)}`, {
+async function findRun(build) {
+  if (build.runId || !build.requestId) return build.runId;
+  const response = await fetch(`${apiBase}/api/runs?request_id=${encodeURIComponent(build.requestId)}`, {
     headers: operatorHeaders(),
     cache: "no-store"
   });
@@ -612,23 +756,27 @@ async function findRun() {
     throw new Error(data.error || "Не удалось найти Action run.");
   }
   if (data.run?.id) {
-    currentRunId = String(data.run.id);
+    build.runId = String(data.run.id);
+    build.actionUrl = data.run.htmlUrl;
     actionsLink.href = data.run.htmlUrl;
-    consoleActionsLink.href = data.run.htmlUrl;
+    if (build.id === selectedBuildId) {
+      consoleActionsLink.href = data.run.htmlUrl;
+    }
   }
-  return currentRunId;
+  return build.runId;
 }
 
 async function refreshLogs() {
+  const build = getSelectedBuild();
   try {
-    if (!currentRequestId) {
+    if (!build) {
       logMeta.textContent = "Сначала нажмите Билд.";
       logOutput.textContent = "Run ещё не создан.";
       return;
     }
 
-    logMeta.textContent = `Ищу workflow run: ${currentRequestId}`;
-    const data = await fetchRunLogs();
+    logMeta.textContent = `Ищу workflow run: ${build.requestId}`;
+    const data = await fetchRunLogs(build);
     if (!data.run) {
       logOutput.textContent = "GitHub Actions ещё создаёт run. Обновляю автоматически...";
       return;
@@ -639,7 +787,7 @@ async function refreshLogs() {
       · ${data.run.status || "unknown"}
       ${data.run.conclusion ? `· ${data.run.conclusion}` : ""}
     `;
-    logOutput.textContent = (data.jobs || [])
+    const output = (data.jobs || [])
       .map((job) => {
         return [
           `===== ${job.name} · ${job.status}${job.conclusion ? ` · ${job.conclusion}` : ""} =====`,
@@ -647,6 +795,10 @@ async function refreshLogs() {
         ].join("\n");
       })
       .join("\n\n");
+    logOutput.textContent = output;
+    build.logMeta = logMeta.innerHTML;
+    build.logOutput = output;
+    updateBuildCard(build);
   } catch (error) {
     logMeta.textContent = "Ошибка логов";
     logOutput.textContent = error.message;
@@ -661,12 +813,19 @@ loadReposButton.addEventListener("click", loadRepos);
 form.addEventListener("submit", submitBuild);
 iconTrigger.addEventListener("click", toggleIconEditor);
 pickIconButton.addEventListener("click", () => iconInput.click());
-timerRing.addEventListener("click", openLogs);
-buildToast.addEventListener("click", openLogs);
-activeBuildCard.addEventListener("click", openLogs);
-consoleOpenLogs.addEventListener("click", openLogs);
+timerRing.addEventListener("click", () => openLogs(selectedBuildId));
+buildToast.addEventListener("click", () => openLogs(toastBuildId || selectedBuildId));
+activeBuildList.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-build-id]");
+  if (!card) return;
+  selectBuild(card.dataset.buildId, { openDetails: true });
+});
+consoleOpenLogs.addEventListener("click", () => openLogs(selectedBuildId));
 consoleRefreshLogs.addEventListener("click", () => {
-  refreshToastLogs();
+  const build = getSelectedBuild();
+  if (build) {
+    refreshBuildLogs(build);
+  }
   refreshLogs();
 });
 consoleNewBuild.addEventListener("click", () => openBuilder(consoleNewBuild));

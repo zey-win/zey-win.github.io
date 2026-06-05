@@ -790,6 +790,24 @@ select:focus {
   gap: 14px;
 }
 
+.active-build-list {
+  max-height: min(520px, calc(100vh - 210px));
+  display: grid;
+  gap: 12px;
+  overflow: auto;
+  padding: 2px 2px 10px;
+}
+
+.active-build-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed rgba(174, 184, 198, 0.86);
+  border-radius: 8px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.72);
+  line-height: 1.45;
+}
+
 .active-build {
   width: 100%;
   display: grid;
@@ -802,11 +820,19 @@ select:focus {
   text-align: left;
   background: rgba(255, 255, 255, 0.9);
   box-shadow: var(--shadow);
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
 .active-build:hover {
   border-color: rgba(39, 102, 216, 0.32);
   transform: translateY(-1px);
+}
+
+.active-build.is-selected {
+  border-color: rgba(39, 102, 216, 0.48);
+  box-shadow:
+    0 0 0 4px rgba(39, 102, 216, 0.1),
+    0 22px 62px rgba(18, 33, 57, 0.16);
 }
 
 .active-build-icon {
@@ -878,6 +904,32 @@ select:focus {
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.active-build-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.active-build-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dfe7ef;
+}
+
+.active-build-progress span {
+  width: 0%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--green), var(--blue));
+  transition: width 700ms ease;
 }
 
 .console-artifact,
