@@ -49,6 +49,9 @@ const consoleLogOutput = document.querySelector("#console-log-output");
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "");
 const configuredOperatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const operatorStorageKey = "zeywin_builder_operator_key";
+const repositoryIconFallbacks = {
+  "zey-win/plinko": "./repo-icons/zey-win__plinko.png?v=20260605"
+};
 
 let selectedIconDataUrl = "";
 let repositoryIconDataUrl = "";
@@ -758,6 +761,11 @@ async function loadPublicRepositoryIcon(repo, ref) {
   return null;
 }
 
+function loadLocalRepositoryIcon(repo) {
+  const url = repositoryIconFallbacks[repo];
+  return url ? { path: "Assets/Sprites/Icon.png", dataUrl: url, source: "pages-fallback" } : null;
+}
+
 async function loadRepositoryIcon({ silent = false } = {}) {
   const repo = repoSelect.value.trim();
   const ref = document.querySelector("#game_ref")?.value?.trim() || "main";
@@ -773,24 +781,29 @@ async function loadRepositoryIcon({ silent = false } = {}) {
   }
 
   try {
-    let icon = null;
+    let icon = loadLocalRepositoryIcon(repo);
     let backendAuthError = "";
-    if (apiBase) {
+    let backendError = "";
+    if (!icon && apiBase) {
       const params = new URLSearchParams({
         game_repository: repo,
         game_ref: ref
       });
-      const response = await fetch(`${apiBase}/api/icon?${params}`, {
-        headers: operatorHeaders(),
-        cache: "no-store"
-      });
-      const data = await response.json();
-      if (response.ok && data.ok && data.icon?.dataUrl) {
-        icon = data.icon;
-      } else if (!response.ok && response.status === 401) {
-        backendAuthError = friendlyError(data.error || "Проверьте ключ запуска backend.");
-      } else if (!response.ok && response.status !== 404) {
-        throw new Error(friendlyError(data.error || "Не удалось загрузить иконку репозитория."));
+      try {
+        const response = await fetch(`${apiBase}/api/icon?${params}`, {
+          headers: operatorHeaders(),
+          cache: "no-store"
+        });
+        const data = await response.json();
+        if (response.ok && data.ok && data.icon?.dataUrl) {
+          icon = data.icon;
+        } else if (!response.ok && response.status === 401) {
+          backendAuthError = friendlyError(data.error || "Проверьте ключ запуска backend.");
+        } else if (!response.ok && response.status !== 404) {
+          backendError = friendlyError(data.error || "Не удалось загрузить иконку репозитория.");
+        }
+      } catch (error) {
+        backendError = friendlyError(error.message);
       }
     }
 
@@ -813,6 +826,10 @@ async function loadRepositoryIcon({ silent = false } = {}) {
 
     if (backendAuthError) {
       throw new Error(backendAuthError);
+    }
+
+    if (backendError) {
+      throw new Error(backendError);
     }
 
     setIconPreview("", "Иконка репозитория не найдена. Нажмите, чтобы выбрать PNG.");
