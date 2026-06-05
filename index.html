@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-parallel1" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-advanced-version1" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -78,21 +78,26 @@
                 <span>ZeyWin API key</span>
                 <input id="zeywin_api_key" name="zeywin_api_key" type="password" autocomplete="off" />
               </label>
-              <div class="build-mode" aria-label="Тип сборки">
-                <label>
-                  <input type="checkbox" name="build_format" value="apk" checked />
-                  <span>
-                    <b>APK тест</b>
-                    <small>versionName 1 / versionCode 1</small>
-                  </span>
-                </label>
-                <label>
-                  <input type="checkbox" name="build_format" value="aab" />
-                  <span>
-                    <b>AAB релиз</b>
-                    <small>следующая версия из Actions</small>
-                  </span>
-                </label>
+              <div class="build-mode-shell">
+                <div class="build-mode" aria-label="Тип сборки">
+                  <label>
+                    <input type="checkbox" name="build_format" value="apk" checked />
+                    <span>
+                      <b>APK тест</b>
+                      <small>versionName 1 / versionCode 1</small>
+                    </span>
+                  </label>
+                  <label>
+                    <input type="checkbox" name="build_format" value="aab" />
+                    <span>
+                      <b>AAB релиз</b>
+                      <small>следующая версия из Actions</small>
+                    </span>
+                  </label>
+                </div>
+                <button class="overflow-button" id="version-options-toggle" type="button" aria-expanded="false" aria-controls="version-advanced" aria-label="Дополнительные настройки версии">
+                  <span aria-hidden="true"></span>
+                </button>
               </div>
               <label class="fast-mode">
                 <input id="fast_build" name="fast_build" type="checkbox" checked />
@@ -101,12 +106,17 @@
                   <small>cache активен, Android ARM64 без 32-bit</small>
                 </span>
               </label>
-              <div class="field-row">
+              <div class="version-advanced" id="version-advanced" aria-hidden="true">
+                <div class="version-advanced-copy">
+                  <b>Ручная версия AAB</b>
+                  <small>Обычно не трогать: версия подставляется автоматически из последнего Actions build.</small>
+                </div>
+                <div class="field-row">
                 <label class="field" for="version_mode">
                   <span>Версия</span>
                   <select id="version_mode" name="version_mode">
-                    <option value="manual">manual</option>
                     <option value="auto_next">auto_next</option>
+                    <option value="manual">manual</option>
                   </select>
                 </label>
                 <label class="field" for="version_name">
@@ -117,6 +127,7 @@
                   <span>AAB versionCode</span>
                   <input id="version_code" name="version_code" inputmode="numeric" value="1" autocomplete="off" />
                 </label>
+                </div>
               </div>
             </fieldset>
 
@@ -267,6 +278,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-parallel1"></script>
+    <script src="./builder.js?v=20260605-advanced-version1"></script>
   </body>
 </html>

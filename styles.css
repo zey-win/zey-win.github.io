@@ -254,6 +254,13 @@ legend {
   gap: 12px;
 }
 
+.build-mode-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 46px;
+  gap: 10px;
+  align-items: stretch;
+}
+
 .build-mode {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -295,6 +302,90 @@ legend {
   border-color: rgba(25, 167, 111, 0.62);
   background: var(--panel-2);
   box-shadow: 0 0 0 4px rgba(25, 167, 111, 0.12);
+}
+
+.overflow-button {
+  width: 46px;
+  min-height: 72px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.overflow-button:hover,
+.overflow-button[aria-expanded="true"] {
+  border-color: rgba(25, 167, 111, 0.54);
+  box-shadow: 0 0 0 4px rgba(25, 167, 111, 0.12);
+  transform: translateY(-1px);
+}
+
+.overflow-button span,
+.overflow-button span::before,
+.overflow-button span::after {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink);
+  content: "";
+  display: block;
+}
+
+.overflow-button span {
+  position: relative;
+}
+
+.overflow-button span::before,
+.overflow-button span::after {
+  position: absolute;
+  left: 0;
+}
+
+.overflow-button span::before {
+  top: -11px;
+}
+
+.overflow-button span::after {
+  top: 11px;
+}
+
+.version-advanced {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition:
+    max-height 320ms cubic-bezier(0.18, 0.82, 0.24, 1),
+    opacity 220ms ease,
+    transform 320ms cubic-bezier(0.18, 0.82, 0.24, 1);
+}
+
+.version-advanced.is-open {
+  max-height: 210px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.version-advanced-copy {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 12px;
+  color: var(--ink);
+}
+
+.version-advanced-copy b {
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.version-advanced-copy small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .fast-mode {
@@ -1346,6 +1437,14 @@ select:focus {
   .repo-row,
   .field-row {
     grid-template-columns: 1fr;
+  }
+
+  .build-mode {
+    grid-template-columns: 1fr;
+  }
+
+  .version-advanced.is-open {
+    max-height: 390px;
   }
 
   .app-name-editor {

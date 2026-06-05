@@ -8,6 +8,8 @@ const packageInput = document.querySelector("#package_name");
 const versionModeInput = document.querySelector("#version_mode");
 const versionNameInput = document.querySelector("#version_name");
 const versionCodeInput = document.querySelector("#version_code");
+const versionOptionsToggle = document.querySelector("#version-options-toggle");
+const versionAdvanced = document.querySelector("#version-advanced");
 const operatorInput = document.querySelector("#operator_key");
 const iconTrigger = document.querySelector("#app-icon-trigger");
 const iconEditor = document.querySelector("#icon-editor");
@@ -55,6 +57,7 @@ let selectedBuildId = "";
 let toastBuildId = "";
 
 iconEditor.inert = true;
+versionAdvanced.inert = true;
 
 function getBuildFormats() {
   return Array.from(document.querySelectorAll('input[name="build_format"]:checked'))
@@ -81,20 +84,34 @@ function syncBuildMode() {
   }
 
   const hasAab = getBuildFormats().includes("aab");
-  versionModeInput.value = "manual";
-  versionModeInput.disabled = true;
+  versionModeInput.disabled = false;
 
   if (!hasAab) {
+    versionModeInput.value = "auto_next";
     versionNameInput.value = "1";
     versionCodeInput.value = "1";
-    versionNameInput.readOnly = true;
-    versionCodeInput.readOnly = true;
+    syncVersionInputs();
     return;
   }
 
-  versionNameInput.readOnly = false;
-  versionCodeInput.readOnly = false;
-  loadLatestVersion();
+  if (versionModeInput.value !== "manual") {
+    versionModeInput.value = "auto_next";
+    loadLatestVersion();
+  }
+  syncVersionInputs();
+}
+
+function syncVersionInputs() {
+  const isManual = versionModeInput.value === "manual";
+  versionNameInput.readOnly = !isManual;
+  versionCodeInput.readOnly = !isManual;
+}
+
+function toggleVersionAdvanced() {
+  const isOpen = versionAdvanced.classList.toggle("is-open");
+  versionAdvanced.setAttribute("aria-hidden", String(!isOpen));
+  versionOptionsToggle.setAttribute("aria-expanded", String(isOpen));
+  versionAdvanced.inert = !isOpen;
 }
 
 function setOriginFromButton(button) {
@@ -317,6 +334,7 @@ function operatorHeaders() {
 
 async function loadLatestVersion() {
   if (!getBuildFormats().includes("aab")) return;
+  if (versionModeInput.value === "manual") return;
   if (!apiBase || !packageInput.value.trim()) return;
 
   const loadId = ++versionLoadId;
@@ -374,7 +392,7 @@ function collectPayload() {
     icon_png_path: selectedIconDataUrl ? "Assets/ZeyWin/IconOverride/android-icon.png" : "",
     icon_png_base64: selectedIconDataUrl,
     zeywin_api_key: data.zeywin_api_key || "",
-    version_mode: data.version_mode || "manual",
+    version_mode: data.version_mode || "auto_next",
     version_name: data.version_name || "",
     version_code: data.version_code || "",
     build_format: getBuildFormat(),
@@ -812,6 +830,13 @@ closeButton.addEventListener("click", () => {
 loadReposButton.addEventListener("click", loadRepos);
 form.addEventListener("submit", submitBuild);
 iconTrigger.addEventListener("click", toggleIconEditor);
+versionOptionsToggle.addEventListener("click", toggleVersionAdvanced);
+versionModeInput.addEventListener("change", () => {
+  syncVersionInputs();
+  if (versionModeInput.value === "auto_next") {
+    loadLatestVersion();
+  }
+});
 pickIconButton.addEventListener("click", () => iconInput.click());
 timerRing.addEventListener("click", () => openLogs(selectedBuildId));
 buildToast.addEventListener("click", () => openLogs(toastBuildId || selectedBuildId));
