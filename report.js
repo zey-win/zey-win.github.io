@@ -5,6 +5,10 @@ const totalTimeEl = document.querySelector("#total-time");
 const subtotalTimeEl = document.querySelector("#subtotal-time");
 const invoiceDaysEl = document.querySelector("#invoice-days");
 const generatedAtEl = document.querySelector("#generated-at");
+const billableHoursEl = document.querySelector("#billable-hours");
+const billingFormulaEl = document.querySelector("#billing-formula");
+const amountDueEl = document.querySelector("#amount-due");
+const hourlyRate = 19;
 const dataVersion = "20260605-random25";
 
 function esc(value) {
@@ -22,6 +26,13 @@ function dateStamp(isoDate) {
 
 function compactTime(value) {
   return value.replace(" ч ", "h ").replace(" мин", "m");
+}
+
+function money(value) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value);
 }
 
 function generatedStamp(value) {
@@ -49,6 +60,11 @@ fetch(`./activity-data.json?v=${dataVersion}`, { cache: "no-store" })
     subtotalTimeEl.textContent = data.totals.spent_time;
     invoiceDaysEl.textContent = `${data.totals.days} days`;
     generatedAtEl.textContent = `Date: ${generatedStamp(data.generated_at)}`;
+    const billableHours = data.totals.spent_minutes / 60;
+    const roundedHours = billableHours.toFixed(2);
+    billableHoursEl.textContent = `${roundedHours} h`;
+    billingFormulaEl.textContent = `${roundedHours}h x $${hourlyRate}`;
+    amountDueEl.textContent = money(billableHours * hourlyRate);
 
     rowsEl.innerHTML = data.rows
       .map((row) => {
