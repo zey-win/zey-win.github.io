@@ -39,7 +39,7 @@ function generatedStamp(value) {
     .replace(",", " /");
 }
 
-fetch("./activity-data.json")
+fetch("./activity-data.json", { cache: "no-store" })
   .then((response) => response.json())
   .then((data) => {
     totalDaysEl.textContent = data.totals.days;
