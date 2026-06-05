@@ -417,8 +417,8 @@ function renderSelectedBuildDetails() {
     consoleProgress.style.width = "0%";
     consoleArtifact.classList.remove("is-ready");
     consoleArtifact.querySelector("b").textContent = "APK/AAB ещё не готов";
-    if (buildDetailKicker) buildDetailKicker.textContent = "Подробности";
-    if (buildDetailTitle) buildDetailTitle.textContent = "Выберите сборку";
+    if (buildDetailKicker) buildDetailKicker.textContent = "Логи";
+    if (buildDetailTitle) buildDetailTitle.textContent = "Сборка в работе";
     renderArtifactDownloads(null);
     consolePayloadList.innerHTML = '<p>Payload появится после запуска сборки.</p>';
     consoleLogMeta.textContent = "Run ещё не создан.";
@@ -429,10 +429,10 @@ function renderSelectedBuildDetails() {
   }
 
   if (buildDetailKicker) {
-    buildDetailKicker.textContent = build.artifactReady ? "Готовая сборка" : "Сборка в работе";
+    buildDetailKicker.textContent = "Логи";
   }
   if (buildDetailTitle) {
-    buildDetailTitle.textContent = build.payload.app_name || "Android приложение";
+    buildDetailTitle.textContent = build.artifactReady ? "Сборка готова" : "Сборка в работе";
   }
   renderConsolePayload(build.payload);
   consoleArtifact.classList.toggle("is-ready", build.artifactReady);

@@ -6,7 +6,7 @@
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <meta name="builder-key" content="3e9b0ac6ecd43c716a5c80255f6936b163a3ceaa" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-console-detail1" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-console-three-light1" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -210,7 +210,9 @@
             <div class="active-build-list" id="active-build-list">
               <p class="active-build-empty">После нажатия Билд здесь появятся параллельные сборки.</p>
             </div>
+          </section>
 
+          <section class="console-pipeline-column" aria-label="Отправлено в конвеер">
             <div class="console-artifact" id="console-artifact">
               <span aria-hidden="true"></span>
               <div class="console-artifact-body">
@@ -227,11 +229,11 @@
             </div>
           </section>
 
-          <section class="console-log-card" aria-label="Подробности сборки">
+          <section class="console-log-card" aria-label="Логи сборки">
             <header>
               <div>
-                <p id="build-detail-kicker">Подробности</p>
-                <h3 id="build-detail-title">Выберите сборку</h3>
+                <p id="build-detail-kicker">Логи</p>
+                <h3 id="build-detail-title">Сборка в работе</h3>
               </div>
               <button class="secondary" type="button" id="console-refresh-logs">Обновить</button>
             </header>
@@ -282,6 +284,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-console-detail1"></script>
+    <script src="./builder.js?v=20260605-console-three-light1"></script>
   </body>
 </html>

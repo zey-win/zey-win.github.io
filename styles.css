@@ -952,10 +952,10 @@ select:focus {
 }
 
 .console-workspace {
-  width: min(1320px, 100%);
+  width: min(1580px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 0.9fr) minmax(240px, 0.66fr) minmax(360px, 1.14fr);
   gap: 18px;
   align-items: start;
 }
@@ -964,22 +964,12 @@ select:focus {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.console-shell[data-tab="builds"] .console-workspace,
-.console-shell[data-tab="console"][data-detail="closed"] .console-workspace {
-  grid-template-columns: minmax(0, 1fr);
+.console-shell[data-tab="builds"] .console-workspace {
+  grid-template-columns: minmax(300px, 0.9fr) minmax(240px, 0.66fr) minmax(360px, 1.14fr);
 }
 
-.console-shell[data-tab="logs"] .console-builds {
-  display: none;
-}
-
-.console-shell[data-tab="builds"] .console-log-card,
-.console-shell[data-tab="console"][data-detail="closed"] .console-log-card {
-  display: none;
-}
-
-.console-shell[data-tab="console"][data-detail="closed"] .console-payload-card,
-.console-shell[data-tab="builds"] .console-payload-card {
+.console-shell[data-tab="logs"] .console-builds,
+.console-shell[data-tab="logs"] .console-pipeline-column {
   display: none;
 }
 
@@ -993,6 +983,11 @@ select:focus {
 }
 
 .console-builds {
+  display: grid;
+  gap: 14px;
+}
+
+.console-pipeline-column {
   display: grid;
   gap: 14px;
 }
@@ -1429,8 +1424,8 @@ select:focus {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 12px;
   padding: 18px;
-  background: rgba(15, 20, 27, 0.95);
-  color: #edf4ff;
+  background: rgba(255, 255, 255, 0.86);
+  color: var(--ink);
 }
 
 .console-log-card header {
@@ -1446,7 +1441,7 @@ select:focus {
 }
 
 .console-log-card p {
-  color: #76e7b0;
+  color: var(--green-dark);
   font-size: 12px;
   font-weight: 900;
   text-transform: uppercase;
@@ -1458,13 +1453,13 @@ select:focus {
 }
 
 .console-log-meta {
-  color: #a9b7ca;
+  color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
 }
 
 .console-log-meta a {
-  color: #76e7b0;
+  color: var(--green-dark);
   font-weight: 850;
   text-decoration: none;
 }
@@ -1474,10 +1469,10 @@ select:focus {
   margin: 0;
   overflow: auto;
   padding: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(220, 226, 234, 0.94);
   border-radius: 8px;
-  background: #080b10;
-  color: #d7e3f7;
+  background: rgba(248, 251, 255, 0.92);
+  color: #273142;
   font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   white-space: pre-wrap;
 }
