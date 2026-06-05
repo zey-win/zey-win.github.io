@@ -113,7 +113,7 @@ function initOperatorKey() {
   } catch {
     storedKey = "";
   }
-  const key = keyFromUrl || storedKey || configuredOperatorKey;
+  const key = keyFromUrl || configuredOperatorKey || storedKey;
   if (key) {
     operatorInput.value = key;
     try {
