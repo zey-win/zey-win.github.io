@@ -76,6 +76,7 @@ let selectedBuildId = "";
 let toastBuildId = "";
 let detailOpen = false;
 let recentReleaseDownloads = [];
+let latestReleaseAssets = { APK: null, AAB: null };
 let recentReleaseDownloadsLoaded = false;
 let recentReleaseDownloadsLoading = false;
 
@@ -654,6 +655,34 @@ function releaseToDownloadBuild(release) {
   };
 }
 
+function latestAssetsFromReleases(sortedReleases) {
+  const latest = { APK: null, AAB: null };
+  for (const release of sortedReleases) {
+    const assets = (release.assets || [])
+      .map((asset) => ({
+        type: assetDownloadType(asset.name),
+        name: asset.name || "",
+        url: asset.browser_download_url || ""
+      }))
+      .filter((asset) => asset.type && asset.url);
+
+    for (const asset of assets) {
+      if (!latest[asset.type]) {
+        latest[asset.type] = {
+          ...asset,
+          releaseName: release.name || "GitHub Release",
+          releaseUrl: release.html_url || "",
+          publishedAt: release.published_at || release.created_at || "",
+          packageName: packageFromRelease(release, [asset]) || "zey-win/ci-cd"
+        };
+      }
+    }
+
+    if (latest.APK && latest.AAB) break;
+  }
+  return latest;
+}
+
 async function loadRecentReleaseDownloads() {
   if (recentReleaseDownloadsLoaded || recentReleaseDownloadsLoading) return;
   recentReleaseDownloadsLoading = true;
@@ -674,14 +703,24 @@ async function loadRecentReleaseDownloads() {
         return bTime - aTime;
       })
       : [];
+    latestReleaseAssets = latestAssetsFromReleases(sortedReleases);
     recentReleaseDownloads = sortedReleases.map(releaseToDownloadBuild).filter(Boolean);
     recentReleaseDownloadsLoaded = true;
   } catch {
     recentReleaseDownloads = [];
+    latestReleaseAssets = { APK: null, AAB: null };
   } finally {
     recentReleaseDownloadsLoading = false;
     renderDownloadList();
   }
+}
+
+function downloadAnchor(item, label) {
+  return `
+    <a class="download-button" href="${escapeHtml(item.url)}" download="${escapeHtml(item.name)}" target="_blank" rel="noreferrer">
+      Скачать ${escapeHtml(label)}
+    </a>
+  `;
 }
 
 function downloadButtonFor(build, type) {
@@ -693,10 +732,24 @@ function downloadButtonFor(build, type) {
   if (!item) {
     return "";
   }
+  return downloadAnchor(item, type);
+}
+
+function renderLatestDownloadStrip() {
+  const items = ["APK", "AAB"].map((type) => latestReleaseAssets[type]).filter(Boolean);
+  if (items.length === 0) return "";
+
   return `
-    <a class="download-button" href="${escapeHtml(item.url)}" download="${escapeHtml(item.name)}" target="_blank" rel="noreferrer">
-      Скачать ${escapeHtml(type)}
-    </a>
+    <article class="download-latest">
+      <div class="download-latest-copy">
+        <span>Последние файлы</span>
+        <b>APK и AAB выбираются по дате публикации из GitHub Releases</b>
+        <small>${items.map((item) => `${item.type}: ${item.releaseName}`).join(" · ")}</small>
+      </div>
+      <div class="download-latest-actions">
+        ${items.map((item) => downloadAnchor(item, item.type)).join("")}
+      </div>
+    </article>
   `;
 }
 
@@ -716,7 +769,9 @@ function renderDownloadList() {
     return;
   }
 
-  downloadList.innerHTML = rows
+  downloadList.innerHTML = `
+    ${renderLatestDownloadStrip()}
+    ${rows
     .map((build) => `
       <article class="download-row">
         <span class="download-icon" aria-hidden="true" style="${build.iconDataUrl ? `background-image: url('${build.iconDataUrl.replace(/'/g, "%27")}')` : ""}"></span>
@@ -731,7 +786,8 @@ function renderDownloadList() {
         </span>
       </article>
     `)
-    .join("");
+    .join("")}
+  `;
 }
 
 function selectBuild(id, { openDetails = false } = {}) {

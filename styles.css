@@ -1289,6 +1289,59 @@ select:focus {
   gap: 12px;
 }
 
+.download-latest {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid rgba(25, 167, 111, 0.32);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(25, 167, 111, 0.11), rgba(39, 102, 216, 0.09)),
+    rgba(255, 255, 255, 0.94);
+  box-shadow: 0 22px 64px rgba(18, 33, 57, 0.12);
+}
+
+.download-latest-copy {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.download-latest-copy span {
+  color: var(--green-dark);
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.download-latest-copy b,
+.download-latest-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-latest-copy b {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.download-latest-copy small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.download-latest-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .download-row {
   display: grid;
   grid-template-columns: 66px minmax(0, 1fr) auto;
@@ -1854,6 +1907,19 @@ select:focus {
 
   .download-row {
     grid-template-columns: 58px minmax(0, 1fr);
+  }
+
+  .download-latest {
+    grid-template-columns: 1fr;
+  }
+
+  .download-latest-copy b,
+  .download-latest-copy small {
+    white-space: normal;
+  }
+
+  .download-latest-actions {
+    justify-content: stretch;
   }
 
   .download-icon {
