@@ -277,13 +277,21 @@ function renderSelectedBuildDetails() {
   consoleLogMeta.innerHTML = build.logMeta;
   consoleLogOutput.textContent = build.logOutput;
   consoleActionsLink.href = build.releaseUrl || build.actionUrl;
-  actionsLink.href = build.releaseUrl || build.actionUrl;
-  artifactSignal.classList.toggle("is-ready", build.artifactReady);
-  artifactSignal.querySelector("b").textContent = build.artifactText;
+  if (actionsLink) {
+    actionsLink.href = build.releaseUrl || build.actionUrl;
+  }
+  if (artifactSignal) {
+    artifactSignal.classList.toggle("is-ready", build.artifactReady);
+    artifactSignal.querySelector("b").textContent = build.artifactText;
+  }
   const progress = buildProgress(build);
   const progressDegrees = Math.round((progress / 100) * 360);
-  timerValue.textContent = formatSeconds(build.secondsLeft);
-  timerRing.style.setProperty("--progress", `${progressDegrees}deg`);
+  if (timerValue) {
+    timerValue.textContent = formatSeconds(build.secondsLeft);
+  }
+  if (timerRing) {
+    timerRing.style.setProperty("--progress", `${progressDegrees}deg`);
+  }
   consoleProgress.style.width = `${progress.toFixed(2)}%`;
   consoleRemaining.textContent = build.artifactReady
     ? "выбранная сборка готова"
@@ -332,6 +340,17 @@ function operatorHeaders() {
   return key ? { "x-builder-key": key } : {};
 }
 
+function friendlyError(message) {
+  const text = String(message || "").trim();
+  if (/operator key is invalid/i.test(text)) {
+    return "Неверный ключ запуска backend.";
+  }
+  if (/operator key/i.test(text)) {
+    return "Проверьте ключ запуска backend.";
+  }
+  return text || "Неизвестная ошибка.";
+}
+
 async function loadLatestVersion() {
   if (!getBuildFormats().includes("aab")) return;
   if (versionModeInput.value === "manual") return;
@@ -347,7 +366,7 @@ async function loadLatestVersion() {
     const data = await response.json();
     if (loadId !== versionLoadId) return;
     if (!response.ok || !data.ok) {
-      throw new Error(data.error || "Не удалось получить последнюю AAB версию.");
+      throw new Error(friendlyError(data.error || "Не удалось получить последнюю AAB версию."));
     }
 
     versionNameInput.value = data.aab?.versionName || "1.0.1";
@@ -357,7 +376,7 @@ async function loadLatestVersion() {
       : `Для этого package ещё нет истории. AAB начнётся с ${versionNameInput.value} / ${versionCodeInput.value}.`;
   } catch (error) {
     if (loadId !== versionLoadId) return;
-    statusText.textContent = error.message;
+    statusText.textContent = friendlyError(error.message);
   }
 }
 
@@ -412,6 +431,7 @@ function collectPayload() {
 }
 
 function renderPayload(payload) {
+  if (!payloadList) return;
   const visible = [
     ["game_repository", payload.game_repository],
     ["builder_request_id", payload.builder_request_id],
@@ -453,11 +473,11 @@ function setBuildTimer(build, secondsLeft) {
   const totalSeconds = build.totalSeconds || 600;
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
-  if (build.id === selectedBuildId) {
+  if (timerValue && build.id === selectedBuildId) {
     timerValue.textContent = `${minutes}:${String(seconds).padStart(2, "0")}`;
   }
   const progress = Math.round(((totalSeconds - secondsLeft) / totalSeconds) * 360);
-  if (build.id === selectedBuildId) {
+  if (timerRing && build.id === selectedBuildId) {
     timerRing.style.setProperty("--progress", `${progress}deg`);
   }
   const percent = ((totalSeconds - secondsLeft) / totalSeconds) * 100;
@@ -539,7 +559,7 @@ async function fetchRunLogs(build) {
   });
   const data = await response.json();
   if (!response.ok || !data.ok) {
-    throw new Error(data.error || "Не удалось загрузить логи.");
+    throw new Error(friendlyError(data.error || "Не удалось загрузить логи."));
   }
   return data;
 }
@@ -595,8 +615,9 @@ async function refreshBuildLogs(build) {
       }
     }
   } catch (error) {
-    updateBuildToast(build, "Ошибка логов", error.message);
-    setBuildLogState(build, "Ошибка логов", error.message);
+    const message = friendlyError(error.message);
+    updateBuildToast(build, "Ошибка логов", message);
+    setBuildLogState(build, "Ошибка логов", message);
   }
 }
 
@@ -618,7 +639,7 @@ async function loadRepos() {
     });
     const data = await response.json();
     if (!response.ok || !data.ok) {
-      throw new Error(data.error || "Не удалось получить репозитории.");
+      throw new Error(friendlyError(data.error || "Не удалось получить репозитории."));
     }
 
     repoSelect.innerHTML = data.repos
@@ -626,7 +647,7 @@ async function loadRepos() {
       .join("");
     statusText.textContent = "Список игр обновлён.";
   } catch (error) {
-    statusText.textContent = error.message;
+    statusText.textContent = friendlyError(error.message);
   }
 }
 
@@ -655,16 +676,20 @@ async function submitBuild(event) {
     });
     const data = await response.json();
     if (!response.ok || !data.ok) {
-      throw new Error(data.error || "Backend не запустил сборку.");
+      throw new Error(friendlyError(data.error || "Backend не запустил сборку."));
     }
 
-    actionsLink.href = data.workflow?.workflowUrl || "https://github.com/zey-win/ci-cd/actions";
-    build.actionUrl = actionsLink.href;
+    build.actionUrl = data.workflow?.workflowUrl || "https://github.com/zey-win/ci-cd/actions";
+    if (actionsLink) {
+      actionsLink.href = build.actionUrl;
+    }
     build.requestId = data.requestId || build.requestId;
     build.runId = data.run?.id ? String(data.run.id) : "";
     if (data.run?.htmlUrl) {
-      actionsLink.href = data.run.htmlUrl;
       build.actionUrl = data.run.htmlUrl;
+      if (actionsLink) {
+        actionsLink.href = data.run.htmlUrl;
+      }
     }
     if (data.latestArtifact?.versionCode && !build.startVersionCode) {
       build.startVersionCode = Number(data.latestArtifact.versionCode) + 1;
@@ -680,10 +705,10 @@ async function submitBuild(event) {
       data.icon?.path ? "Иконка записана, сборка отправлена в GitHub Actions." : "Сборка отправлена в GitHub Actions."
     );
   } catch (error) {
-    statusText.textContent = error.message;
+    statusText.textContent = friendlyError(error.message);
     build.state = "failed";
-    updateBuildToast(build, "Ошибка запуска", error.message);
-    setBuildLogState(build, "Backend не запустил сборку", error.message);
+    updateBuildToast(build, "Ошибка запуска", friendlyError(error.message));
+    setBuildLogState(build, "Backend не запустил сборку", friendlyError(error.message));
     updateBuildCard(build);
   }
 }
@@ -696,8 +721,10 @@ function setArtifactSignal(build, ready, text, url = "") {
     build.releaseUrl = url || build.releaseUrl;
   }
   if (build.id === selectedBuildId) {
-    artifactSignal.classList.toggle("is-ready", ready);
-    artifactSignal.querySelector("b").textContent = text;
+    if (artifactSignal) {
+      artifactSignal.classList.toggle("is-ready", ready);
+      artifactSignal.querySelector("b").textContent = text;
+    }
     consoleArtifact.classList.toggle("is-ready", ready);
     consoleArtifact.querySelector("b").textContent = text;
     if (url) {
@@ -705,7 +732,9 @@ function setArtifactSignal(build, ready, text, url = "") {
     }
   }
   if (url) {
-    actionsLink.href = url;
+    if (actionsLink) {
+      actionsLink.href = url;
+    }
   }
   updateBuildCard(build);
 }
@@ -730,7 +759,7 @@ async function pollArtifact(build) {
     });
     const data = await response.json();
     if (!response.ok || !data.ok) {
-      throw new Error(data.error || "Не удалось проверить APK/AAB.");
+      throw new Error(friendlyError(data.error || "Не удалось проверить APK/AAB."));
     }
     if (data.ready && data.artifact) {
       clearInterval(build.artifactRefreshId);
@@ -740,7 +769,7 @@ async function pollArtifact(build) {
       statusText.textContent = `${label}. Можно открыть GitHub Release.`;
     }
   } catch (error) {
-    setArtifactSignal(build, false, error.message);
+    setArtifactSignal(build, false, friendlyError(error.message));
   }
 }
 
@@ -771,12 +800,14 @@ async function findRun(build) {
   });
   const data = await response.json();
   if (!response.ok || !data.ok) {
-    throw new Error(data.error || "Не удалось найти Action run.");
+    throw new Error(friendlyError(data.error || "Не удалось найти Action run."));
   }
   if (data.run?.id) {
     build.runId = String(data.run.id);
     build.actionUrl = data.run.htmlUrl;
-    actionsLink.href = data.run.htmlUrl;
+    if (actionsLink) {
+      actionsLink.href = data.run.htmlUrl;
+    }
     if (build.id === selectedBuildId) {
       consoleActionsLink.href = data.run.htmlUrl;
     }
@@ -819,7 +850,7 @@ async function refreshLogs() {
     updateBuildCard(build);
   } catch (error) {
     logMeta.textContent = "Ошибка логов";
-    logOutput.textContent = error.message;
+    logOutput.textContent = friendlyError(error.message);
   }
 }
 
@@ -838,7 +869,9 @@ versionModeInput.addEventListener("change", () => {
   }
 });
 pickIconButton.addEventListener("click", () => iconInput.click());
-timerRing.addEventListener("click", () => openLogs(selectedBuildId));
+if (timerRing) {
+  timerRing.addEventListener("click", () => openLogs(selectedBuildId));
+}
 buildToast.addEventListener("click", () => openLogs(toastBuildId || selectedBuildId));
 activeBuildList.addEventListener("click", (event) => {
   const card = event.target.closest("[data-build-id]");

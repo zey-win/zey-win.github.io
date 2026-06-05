@@ -197,17 +197,15 @@ button {
 }
 
 .builder-grid {
-  width: min(1280px, 100%);
+  width: min(920px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 430px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   align-items: start;
 }
 
-.build-form,
-.payload-card,
-.timer-card {
+.build-form {
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(220, 226, 234, 0.9);
   border-radius: 8px;
@@ -561,9 +559,24 @@ select:focus {
   padding-top: 4px;
 }
 
+.form-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
+  gap: 14px;
+  align-items: center;
+}
+
+.build-status {
+  min-height: 20px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
 .build-button {
-  width: min(260px, 100%);
-  justify-self: end;
+  width: 100%;
 }
 
 .pipeline {
@@ -1411,9 +1424,6 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
-  .pipeline {
-    position: static;
-  }
 }
 
 @media (max-width: 620px) {
@@ -1462,6 +1472,10 @@ select:focus {
 
   .build-button {
     width: 100%;
+  }
+
+  .form-actions {
+    grid-template-columns: 1fr;
   }
 
   .build-toast {

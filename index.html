@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-advanced-version1" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-builder-clean1" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -161,28 +161,11 @@
               </label>
             </fieldset>
 
-            <button class="build-button" type="submit">Билд</button>
+            <div class="form-actions">
+              <p class="build-status" id="build-status" aria-live="polite">Готово к запуску сборки.</p>
+              <button class="build-button" type="submit">Билд</button>
+            </div>
           </form>
-
-          <aside class="pipeline" id="pipeline" aria-live="polite">
-            <div class="payload-card">
-              <h3>Конвеер</h3>
-              <div class="payload-list" id="payload-list">
-                <p>Поля появятся тут после нажатия Билд.</p>
-              </div>
-            </div>
-            <div class="timer-card" id="timer-card">
-              <button class="timer-ring" id="timer-ring" type="button">
-                <span id="timer-value">10:00</span>
-              </button>
-              <div class="artifact-signal" id="artifact-signal">
-                <span></span>
-                <b>APK/AAB ещё не готов</b>
-              </div>
-              <p id="build-status">Ожидает payload.</p>
-              <a id="actions-link" href="https://github.com/zey-win/ci-cd/actions" target="_blank" rel="noreferrer">Открыть Actions</a>
-            </div>
-          </aside>
         </div>
       </div>
     </section>
@@ -278,6 +261,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-advanced-version1"></script>
+    <script src="./builder.js?v=20260605-builder-clean1"></script>
   </body>
 </html>
