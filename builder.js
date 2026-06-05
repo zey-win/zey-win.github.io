@@ -423,6 +423,10 @@ async function loadLatestVersion() {
   if (!getBuildFormats().includes("aab")) return;
   if (versionModeInput.value === "manual") return;
   if (!apiBase || !packageInput.value.trim()) return;
+  if (apiBase.includes("zeywin-android-builder-api.vercel.app")) {
+    statusText.textContent = "AAB auto version ждёт обновления backend. Сейчас используются текущие поля версии.";
+    return;
+  }
 
   const loadId = ++versionLoadId;
   try {
