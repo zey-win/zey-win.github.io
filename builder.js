@@ -4,6 +4,13 @@ const closeButton = document.querySelector("#close-builder");
 const form = document.querySelector("#build-form");
 const repoSelect = document.querySelector("#game_repository");
 const loadReposButton = document.querySelector("#load-repos");
+const packageInput = document.querySelector("#package_name");
+const versionModeInput = document.querySelector("#version_mode");
+const versionNameInput = document.querySelector("#version_name");
+const versionCodeInput = document.querySelector("#version_code");
+const operatorInput = document.querySelector("#operator_key");
+const iconTrigger = document.querySelector("#app-icon-trigger");
+const iconEditor = document.querySelector("#icon-editor");
 const pickIconButton = document.querySelector("#pick-icon");
 const iconInput = document.querySelector("#icon_file");
 const iconPreview = document.querySelector("#icon-preview");
@@ -28,27 +35,45 @@ let currentRequestId = "";
 let currentRunId = "";
 let currentPackageName = "";
 let startVersionCode = 0;
+let versionLoadId = 0;
+
+iconEditor.inert = true;
+
+function getBuildFormats() {
+  return Array.from(document.querySelectorAll('input[name="build_format"]:checked'))
+    .map((input) => input.value)
+    .filter((value) => value === "apk" || value === "aab");
+}
+
+function getBuildFormat() {
+  const formats = getBuildFormats();
+  if (formats.includes("apk") && formats.includes("aab")) return "apk_aab";
+  if (formats.includes("aab")) return "aab";
+  return "apk";
+}
 
 function syncBuildMode() {
-  const format = document.querySelector('input[name="build_format"]:checked')?.value || "apk";
-  const versionMode = document.querySelector("#version_mode");
-  const versionName = document.querySelector("#version_name");
-  const versionCode = document.querySelector("#version_code");
-  if (format === "apk") {
-    versionMode.value = "manual";
-    versionName.value = "1";
-    versionCode.value = "1";
-    versionMode.disabled = true;
-    versionName.readOnly = true;
-    versionCode.readOnly = true;
-  } else {
-    versionMode.value = "manual";
-    versionMode.disabled = true;
-    versionName.readOnly = false;
-    versionCode.readOnly = false;
-    if (versionName.value === "1") versionName.value = "1.2.6";
-    if (versionCode.value === "1") versionCode.value = "10";
+  const checked = getBuildFormats();
+  if (checked.length === 0) {
+    const apkInput = document.querySelector('input[name="build_format"][value="apk"]');
+    if (apkInput) apkInput.checked = true;
   }
+
+  const hasAab = getBuildFormats().includes("aab");
+  versionModeInput.value = "manual";
+  versionModeInput.disabled = true;
+
+  if (!hasAab) {
+    versionNameInput.value = "1";
+    versionCodeInput.value = "1";
+    versionNameInput.readOnly = true;
+    versionCodeInput.readOnly = true;
+    return;
+  }
+
+  versionNameInput.readOnly = false;
+  versionCodeInput.readOnly = false;
+  loadLatestVersion();
 }
 
 function setOriginFromButton(button) {
@@ -70,9 +95,44 @@ function closeBuilder() {
   openButton.focus();
 }
 
+function toggleIconEditor() {
+  const isOpen = iconEditor.classList.toggle("is-open");
+  iconEditor.setAttribute("aria-hidden", String(!isOpen));
+  iconTrigger.setAttribute("aria-expanded", String(isOpen));
+  iconEditor.inert = !isOpen;
+}
+
 function operatorHeaders() {
-  const key = document.querySelector("#operator_key")?.value?.trim();
+  const key = operatorInput?.value?.trim();
   return key ? { "x-builder-key": key } : {};
+}
+
+async function loadLatestVersion() {
+  if (!getBuildFormats().includes("aab")) return;
+  if (!apiBase || !packageInput.value.trim()) return;
+
+  const loadId = ++versionLoadId;
+  try {
+    const params = new URLSearchParams({ package_name: packageInput.value.trim() });
+    const response = await fetch(`${apiBase}/api/versions?${params}`, {
+      headers: operatorHeaders(),
+      cache: "no-store"
+    });
+    const data = await response.json();
+    if (loadId !== versionLoadId) return;
+    if (!response.ok || !data.ok) {
+      throw new Error(data.error || "Не удалось получить последнюю AAB версию.");
+    }
+
+    versionNameInput.value = data.aab?.versionName || "1.0.1";
+    versionCodeInput.value = data.aab?.versionCode || "1";
+    statusText.textContent = data.latest?.versionCode
+      ? `AAB версия подставлена из Actions: ${versionNameInput.value} / ${versionCodeInput.value}.`
+      : `Для этого package ещё нет истории. AAB начнётся с ${versionNameInput.value} / ${versionCodeInput.value}.`;
+  } catch (error) {
+    if (loadId !== versionLoadId) return;
+    statusText.textContent = error.message;
+  }
 }
 
 function maskValue(key, value) {
@@ -100,7 +160,7 @@ function collectPayload() {
     version_mode: data.version_mode || "manual",
     version_name: data.version_name || "",
     version_code: data.version_code || "",
-    build_format: data.build_format === "aab" ? "aab" : "apk",
+    build_format: getBuildFormat(),
     publish_to_google_play: "false",
     google_play_track: "production",
     google_play_status: "completed",
@@ -131,7 +191,7 @@ function renderPayload(payload) {
     ["admob_android_banner_id", payload.admob_android_banner_id],
     ["admob_android_interstitial_id", payload.admob_android_interstitial_id],
     ["admob_android_rewarded_id", payload.admob_android_rewarded_id],
-    ["build_format", "apk"]
+    ["build_format", payload.build_format]
   ];
 
   payloadList.classList.remove("is-sending");
@@ -204,7 +264,7 @@ async function submitBuild(event) {
   currentRequestId = payload.builder_request_id;
   currentRunId = "";
   currentPackageName = payload.package_name;
-  startVersionCode = Number(payload.version_code || 0);
+  startVersionCode = payload.build_format === "apk" ? 1 : Number(payload.version_code || 0);
   renderPayload(payload);
   startTimer(600);
   setArtifactSignal(false, "APK/AAB ещё не готов");
@@ -361,12 +421,16 @@ openButton.addEventListener("click", openBuilder);
 closeButton.addEventListener("click", closeBuilder);
 loadReposButton.addEventListener("click", loadRepos);
 form.addEventListener("submit", submitBuild);
+iconTrigger.addEventListener("click", toggleIconEditor);
 pickIconButton.addEventListener("click", () => iconInput.click());
 timerRing.addEventListener("click", openLogs);
 closeLogsButton.addEventListener("click", closeLogs);
 document.querySelectorAll('input[name="build_format"]').forEach((input) => {
   input.addEventListener("change", syncBuildMode);
 });
+packageInput.addEventListener("change", loadLatestVersion);
+operatorInput.addEventListener("change", loadLatestVersion);
+operatorInput.addEventListener("blur", loadLatestVersion);
 syncBuildMode();
 
 iconInput.addEventListener("change", async () => {
@@ -379,7 +443,9 @@ iconInput.addEventListener("change", async () => {
   }
   selectedIconDataUrl = await readIcon(file);
   iconPreview.style.backgroundImage = `url("${selectedIconDataUrl}")`;
+  iconPreview.classList.add("has-image");
   iconName.textContent = `${file.name} → Assets/ZeyWin/IconOverride/android-icon.png`;
+  iconTrigger.setAttribute("aria-label", `Иконка выбрана: ${file.name}. Нажмите, чтобы изменить.`);
 });
 
 document.addEventListener("keydown", (event) => {

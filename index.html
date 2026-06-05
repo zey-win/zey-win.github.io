@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-builder1" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-builder2" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -54,10 +54,22 @@
                   <input id="package_name" name="package_name" value="com.playsocialgames.plinkofun" autocomplete="off" />
                 </label>
               </div>
-              <label class="field" for="app_name">
-                <span>Название игры</span>
-                <input id="app_name" name="app_name" value="Plinko Real Money" autocomplete="off" />
-              </label>
+              <div class="app-name-editor">
+                <button class="app-icon-trigger" type="button" id="app-icon-trigger" aria-expanded="false" aria-controls="icon-editor" aria-label="Настроить иконку приложения">
+                  <span class="icon-preview" id="icon-preview" aria-hidden="true"></span>
+                </button>
+                <label class="field app-name-field" for="app_name">
+                  <span>Название игры</span>
+                  <input id="app_name" name="app_name" value="Plinko Real Money" autocomplete="off" />
+                </label>
+              </div>
+              <div class="icon-editor" id="icon-editor" aria-hidden="true">
+                <div class="icon-editor-inner">
+                  <input class="file-input" id="icon_file" name="icon_file" type="file" accept="image/png" />
+                  <button class="secondary" type="button" id="pick-icon">Выбрать PNG иконку</button>
+                  <p id="icon-name">Будет записана в Assets/ZeyWin/IconOverride/android-icon.png</p>
+                </div>
+              </div>
             </fieldset>
 
             <fieldset>
@@ -66,19 +78,19 @@
                 <span>ZeyWin API key</span>
                 <input id="zeywin_api_key" name="zeywin_api_key" type="password" autocomplete="off" />
               </label>
-              <div class="build-mode" role="radiogroup" aria-label="Тип сборки">
+              <div class="build-mode" aria-label="Тип сборки">
                 <label>
-                  <input type="radio" name="build_format" value="apk" checked />
+                  <input type="checkbox" name="build_format" value="apk" checked />
                   <span>
                     <b>APK тест</b>
                     <small>versionName 1 / versionCode 1</small>
                   </span>
                 </label>
                 <label>
-                  <input type="radio" name="build_format" value="aab" />
+                  <input type="checkbox" name="build_format" value="aab" />
                   <span>
                     <b>AAB релиз</b>
-                    <small>ручная версия и код</small>
+                    <small>следующая версия из Actions</small>
                   </span>
                 </label>
               </div>
@@ -91,11 +103,11 @@
                   </select>
                 </label>
                 <label class="field" for="version_name">
-                  <span>versionName</span>
+                  <span>AAB versionName</span>
                   <input id="version_name" name="version_name" value="1" autocomplete="off" />
                 </label>
                 <label class="field" for="version_code">
-                  <span>versionCode</span>
+                  <span>AAB versionCode</span>
                   <input id="version_code" name="version_code" inputmode="numeric" value="1" autocomplete="off" />
                 </label>
               </div>
@@ -120,18 +132,6 @@
                   <span>Rewarded</span>
                   <input id="admob_android_rewarded_id" name="admob_android_rewarded_id" value="ca-app-pub-6988952582458184/7061184633" autocomplete="off" />
                 </label>
-              </div>
-            </fieldset>
-
-            <fieldset>
-              <legend>Иконка</legend>
-              <div class="icon-pick">
-                <div class="icon-preview" id="icon-preview" aria-hidden="true"></div>
-                <div>
-                  <input class="file-input" id="icon_file" name="icon_file" type="file" accept="image/png" />
-                  <button class="secondary" type="button" id="pick-icon">Выбрать PNG иконку</button>
-                  <p id="icon-name">Будет записана в Assets/ZeyWin/IconOverride/android-icon.png</p>
-                </div>
               </div>
             </fieldset>
 
@@ -185,6 +185,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-builder1"></script>
+    <script src="./builder.js?v=20260605-builder2"></script>
   </body>
 </html>
