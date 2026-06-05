@@ -47,9 +47,12 @@ const consolePayloadList = document.querySelector("#console-payload-list");
 const consoleLogMeta = document.querySelector("#console-log-meta");
 const consoleLogOutput = document.querySelector("#console-log-output");
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "");
+const configuredOperatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const operatorStorageKey = "zeywin_builder_operator_key";
 
 let selectedIconDataUrl = "";
+let repositoryIconDataUrl = "";
+let repositoryIconLoadId = 0;
 let logRefreshId = 0;
 let versionLoadId = 0;
 let payloadAnimationTimer = 0;
@@ -106,7 +109,7 @@ function initOperatorKey() {
   } catch {
     storedKey = "";
   }
-  const key = keyFromUrl || storedKey;
+  const key = keyFromUrl || storedKey || configuredOperatorKey;
   if (key) {
     operatorInput.value = key;
     try {
@@ -185,6 +188,7 @@ function openBuilder(sourceButton = openButton) {
   setOriginFromButton(sourceButton);
   shell.classList.add("is-open");
   shell.setAttribute("aria-hidden", "false");
+  loadRepositoryIcon({ silent: true });
   setTimeout(() => document.querySelector("#game_repository")?.focus(), 420);
 }
 
@@ -211,7 +215,7 @@ function createBuild(payload) {
     logRefreshId: 0,
     artifactRefreshId: 0,
     actionUrl: "https://github.com/zey-win/ci-cd/actions",
-    iconDataUrl: selectedIconDataUrl,
+    iconDataUrl: selectedIconDataUrl || repositoryIconDataUrl,
     state: "queued",
     meta: `${formatBuildFormat(payload.build_format)} · ожидаю GitHub Actions`,
     logLine: "Run ещё создаётся. Логи появятся автоматически.",
@@ -691,6 +695,141 @@ async function readIcon(file) {
   });
 }
 
+function iconBackgroundStyle(dataUrl) {
+  return `url("${String(dataUrl || "").replace(/"/g, "%22")}")`;
+}
+
+function setIconPreview(dataUrl, label) {
+  if (!dataUrl) {
+    iconPreview.style.backgroundImage = "";
+    iconPreview.classList.remove("has-image");
+    iconTrigger.setAttribute("aria-label", "Настроить иконку приложения");
+    iconName.textContent = label || "Иконка репозитория не найдена. Нажмите, чтобы выбрать PNG.";
+    return;
+  }
+
+  iconPreview.style.backgroundImage = iconBackgroundStyle(dataUrl);
+  iconPreview.classList.add("has-image");
+  iconTrigger.setAttribute("aria-label", label || "Иконка приложения загружена. Нажмите, чтобы изменить.");
+}
+
+function publicRawIconCandidates(repo, ref) {
+  const encodedRepo = repo.split("/").map(encodeURIComponent).join("/");
+  const encodedRef = encodeURIComponent(ref || "main");
+  const paths = [
+    "Assets/ZeyWin/IconOverride/android-icon.png",
+    "Assets/Sprites/Icon.png",
+    "Assets/AppIcon.png",
+    "Assets/LauncherIcon.png",
+    "Assets/Icons/AppIcon.png",
+    "Assets/Resources/AppIcon.png"
+  ];
+
+  return paths.map((path) => ({
+    path,
+    url: `https://raw.githubusercontent.com/${encodedRepo}/${encodedRef}/${path.split("/").map(encodeURIComponent).join("/")}`
+  }));
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function loadPublicRepositoryIcon(repo, ref) {
+  for (const candidate of publicRawIconCandidates(repo, ref)) {
+    try {
+      const response = await fetch(candidate.url, { cache: "no-store" });
+      if (!response.ok) continue;
+      const blob = await response.blob();
+      if (blob.type && blob.type !== "image/png") continue;
+      const dataUrl = await blobToDataUrl(blob);
+      if (dataUrl.startsWith("data:image/png")) {
+        return { path: candidate.path, dataUrl, source: "raw" };
+      }
+    } catch {
+      // Public raw fallback is best-effort only; private repos are loaded through backend.
+    }
+  }
+  return null;
+}
+
+async function loadRepositoryIcon({ silent = false } = {}) {
+  const repo = repoSelect.value.trim();
+  const ref = document.querySelector("#game_ref")?.value?.trim() || "main";
+  const loadId = ++repositoryIconLoadId;
+  selectedIconDataUrl = "";
+  repositoryIconDataUrl = "";
+  iconInput.value = "";
+  iconPreview.classList.add("is-loading");
+  setIconPreview("", "Ищу иконку в выбранном GitHub репозитории...");
+  iconName.textContent = "Ищу иконку в выбранном GitHub репозитории...";
+  if (!silent) {
+    statusText.textContent = "Загружаю иконку приложения из GitHub...";
+  }
+
+  try {
+    let icon = null;
+    let backendAuthError = "";
+    if (apiBase) {
+      const params = new URLSearchParams({
+        game_repository: repo,
+        game_ref: ref
+      });
+      const response = await fetch(`${apiBase}/api/icon?${params}`, {
+        headers: operatorHeaders(),
+        cache: "no-store"
+      });
+      const data = await response.json();
+      if (response.ok && data.ok && data.icon?.dataUrl) {
+        icon = data.icon;
+      } else if (!response.ok && response.status === 401) {
+        backendAuthError = friendlyError(data.error || "Проверьте ключ запуска backend.");
+      } else if (!response.ok && response.status !== 404) {
+        throw new Error(friendlyError(data.error || "Не удалось загрузить иконку репозитория."));
+      }
+    }
+
+    if (!icon) {
+      icon = await loadPublicRepositoryIcon(repo, ref);
+    }
+
+    if (loadId !== repositoryIconLoadId) return;
+    iconPreview.classList.remove("is-loading");
+
+    if (icon?.dataUrl) {
+      repositoryIconDataUrl = icon.dataUrl;
+      setIconPreview(repositoryIconDataUrl, `Иконка из ${repo}: ${icon.path}. Нажмите, чтобы заменить PNG.`);
+      iconName.textContent = `Иконка из ${repo}: ${icon.path}. Нажмите, чтобы заменить PNG.`;
+      if (!silent) {
+        statusText.textContent = "Иконка приложения загружена из выбранного репозитория.";
+      }
+      return;
+    }
+
+    if (backendAuthError) {
+      throw new Error(backendAuthError);
+    }
+
+    setIconPreview("", "Иконка репозитория не найдена. Нажмите, чтобы выбрать PNG.");
+    if (!silent) {
+      statusText.textContent = "Иконка в репозитории не найдена. Можно выбрать PNG вручную.";
+    }
+  } catch (error) {
+    if (loadId !== repositoryIconLoadId) return;
+    iconPreview.classList.remove("is-loading");
+    setIconPreview("", "Не удалось загрузить иконку репозитория. Нажмите, чтобы выбрать PNG.");
+    iconName.textContent = friendlyError(error.message);
+    if (!silent) {
+      statusText.textContent = friendlyError(error.message);
+    }
+  }
+}
+
 async function loadRepos() {
   statusText.textContent = "Загружаю список репозиториев...";
   try {
@@ -703,10 +842,15 @@ async function loadRepos() {
       throw new Error(friendlyError(data.error || "Не удалось получить репозитории."));
     }
 
+    const currentRepo = repoSelect.value;
     repoSelect.innerHTML = data.repos
       .map((repo) => `<option value="${repo.fullName}">${repo.fullName}</option>`)
       .join("");
+    if (currentRepo && [...repoSelect.options].some((option) => option.value === currentRepo)) {
+      repoSelect.value = currentRepo;
+    }
     statusText.textContent = "Список игр обновлён.";
+    loadRepositoryIcon();
   } catch (error) {
     statusText.textContent = friendlyError(error.message);
   }
@@ -920,6 +1064,10 @@ closeButton.addEventListener("click", () => {
   closeBuilder({ restoreFocus: !consoleShell.classList.contains("is-open") });
 });
 loadReposButton.addEventListener("click", loadRepos);
+repoSelect.addEventListener("change", () => {
+  loadLatestVersion();
+  loadRepositoryIcon();
+});
 form.addEventListener("submit", submitBuild);
 iconTrigger.addEventListener("click", toggleIconEditor);
 versionOptionsToggle.addEventListener("click", toggleVersionAdvanced);
@@ -967,10 +1115,10 @@ iconInput.addEventListener("change", async () => {
     return;
   }
   selectedIconDataUrl = await readIcon(file);
-  iconPreview.style.backgroundImage = `url("${selectedIconDataUrl}")`;
-  iconPreview.classList.add("has-image");
+  repositoryIconDataUrl = "";
+  iconPreview.classList.remove("is-loading");
+  setIconPreview(selectedIconDataUrl, `Иконка выбрана: ${file.name}. Нажмите, чтобы изменить.`);
   iconName.textContent = `${file.name} → Assets/ZeyWin/IconOverride/android-icon.png`;
-  iconTrigger.setAttribute("aria-label", `Иконка выбрана: ${file.name}. Нажмите, чтобы изменить.`);
 });
 
 document.addEventListener("keydown", (event) => {
