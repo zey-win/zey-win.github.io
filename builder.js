@@ -36,6 +36,7 @@ let currentRunId = "";
 let currentPackageName = "";
 let startVersionCode = 0;
 let versionLoadId = 0;
+let payloadAnimationTimer = 0;
 
 iconEditor.inert = true;
 
@@ -195,6 +196,7 @@ function renderPayload(payload) {
   ];
 
   payloadList.classList.remove("is-sending");
+  clearTimeout(payloadAnimationTimer);
   payloadList.innerHTML = visible
     .map(([key, value]) => `
       <div class="payload-item">
@@ -204,7 +206,10 @@ function renderPayload(payload) {
     `)
     .join("");
 
-  requestAnimationFrame(() => payloadList.classList.add("is-sending"));
+  requestAnimationFrame(() => {
+    payloadList.classList.add("is-sending");
+    payloadAnimationTimer = setTimeout(() => payloadList.classList.remove("is-sending"), 920);
+  });
 }
 
 function setTimer(secondsLeft, totalSeconds) {
