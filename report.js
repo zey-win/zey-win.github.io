@@ -5,6 +5,7 @@ const totalTimeEl = document.querySelector("#total-time");
 const subtotalTimeEl = document.querySelector("#subtotal-time");
 const invoiceDaysEl = document.querySelector("#invoice-days");
 const generatedAtEl = document.querySelector("#generated-at");
+const dataVersion = "20260605-random25";
 
 function esc(value) {
   return String(value)
@@ -39,7 +40,7 @@ function generatedStamp(value) {
     .replace(",", " /");
 }
 
-fetch("./activity-data.json", { cache: "no-store" })
+fetch(`./activity-data.json?v=${dataVersion}`, { cache: "no-store" })
   .then((response) => response.json())
   .then((data) => {
     totalDaysEl.textContent = data.totals.days;

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T04:12:27+03:00",
+  "generated_at": "2026-06-05T05:41:06+03:00",
   "timezone": "Europe/Kiev",
   "source": {
     "chat_id": 5187562045,
@@ -16,99 +16,99 @@
   "totals": {
     "days": 16,
     "messages": 453,
-    "spent_minutes": 2926,
-    "spent_time": "48 ч 46 мин"
+    "spent_minutes": 4909,
+    "spent_time": "81 ч 49 мин"
   },
   "rows": [
     {
       "date": "2026-05-18",
       "description": "18.05.2026 - офферы, GitHub, CI/CD; стор.",
-      "spent_minutes": 46,
-      "spent_time": "0 ч 46 мин",
+      "spent_minutes": 226,
+      "spent_time": "3 ч 46 мин",
       "message_count": 7,
       "sessions": [
         "14:36-15:07"
       ],
-      "intensity": 0.094
+      "intensity": 0.372
     },
     {
       "date": "2026-05-20",
       "description": "20.05.2026 - SDK demo, API key; трекер.",
-      "spent_minutes": 55,
-      "spent_time": "0 ч 55 мин",
+      "spent_minutes": 235,
+      "spent_time": "3 ч 55 мин",
       "message_count": 8,
       "sessions": [
         "11:15-11:55"
       ],
-      "intensity": 0.113
+      "intensity": 0.387
     },
     {
       "date": "2026-05-21",
       "description": "21.05.2026 - Plinko: стор, SDK, реклама, APK.",
-      "spent_minutes": 162,
-      "spent_time": "2 ч 42 мин",
+      "spent_minutes": 222,
+      "spent_time": "3 ч 42 мин",
       "message_count": 34,
       "sessions": [
         "11:40-12:24",
         "15:15-16:43"
       ],
-      "intensity": 0.332
+      "intensity": 0.365
     },
     {
       "date": "2026-05-22",
       "description": "22.05.2026 - Plinko CI/CD, доступы, VPN/ROOT.",
-      "spent_minutes": 231,
-      "spent_time": "3 ч 51 мин",
+      "spent_minutes": 351,
+      "spent_time": "5 ч 51 мин",
       "message_count": 21,
       "sessions": [
         "10:34-13:44",
         "21:57-22:08"
       ],
-      "intensity": 0.474
+      "intensity": 0.577
     },
     {
       "date": "2026-05-23",
       "description": "23.05.2026 - Play Market, GitHub, сборки.",
-      "spent_minutes": 150,
-      "spent_time": "2 ч 30 мин",
+      "spent_minutes": 270,
+      "spent_time": "4 ч 30 мин",
       "message_count": 33,
       "sessions": [
         "01:44-01:50",
         "14:30-14:30",
         "20:49-22:28"
       ],
-      "intensity": 0.308
+      "intensity": 0.444
     },
     {
       "date": "2026-05-24",
       "description": "24.05.2026 - телефон, Android logs, WebView.",
-      "spent_minutes": 109,
-      "spent_time": "1 ч 49 мин",
+      "spent_minutes": 229,
+      "spent_time": "3 ч 49 мин",
       "message_count": 26,
       "sessions": [
         "13:23-14:23",
         "16:59-16:59",
         "19:04-19:07"
       ],
-      "intensity": 0.224
+      "intensity": 0.377
     },
     {
       "date": "2026-05-25",
       "description": "25.05.2026 - предмодерация и review.",
-      "spent_minutes": 33,
-      "spent_time": "0 ч 33 мин",
+      "spent_minutes": 273,
+      "spent_time": "4 ч 33 мин",
       "message_count": 7,
       "sessions": [
         "12:43-12:45",
         "23:00-23:00"
       ],
-      "intensity": 0.068
+      "intensity": 0.449
     },
     {
       "date": "2026-05-26",
       "description": "26.05.2026 - AdMob, Firebase, offer URL.",
-      "spent_minutes": 214,
-      "spent_time": "3 ч 34 мин",
+      "spent_minutes": 334,
+      "spent_time": "5 ч 34 мин",
       "message_count": 39,
       "sessions": [
         "13:14-13:23",
@@ -116,13 +116,13 @@
         "18:40-18:42",
         "22:11-23:03"
       ],
-      "intensity": 0.439
+      "intensity": 0.549
     },
     {
       "date": "2026-05-27",
       "description": "27.05.2026 - AAB/APK, ADB, Analytics, AdMob.",
-      "spent_minutes": 383,
-      "spent_time": "6 ч 23 мин",
+      "spent_minutes": 503,
+      "spent_time": "8 ч 23 мин",
       "message_count": 44,
       "sessions": [
         "01:00-01:03",
@@ -130,77 +130,77 @@
         "12:39-14:26",
         "16:38-19:57"
       ],
-      "intensity": 0.785
+      "intensity": 0.827
     },
     {
       "date": "2026-05-28",
       "description": "28.05.2026 - тесты и причины показа рекламы.",
-      "spent_minutes": 45,
-      "spent_time": "0 ч 45 мин",
+      "spent_minutes": 225,
+      "spent_time": "3 ч 45 мин",
       "message_count": 3,
       "sessions": [
         "11:06-11:06",
         "15:32-15:32",
         "17:32-17:32"
       ],
-      "intensity": 0.092
+      "intensity": 0.37
     },
     {
       "date": "2026-05-29",
       "description": "29.05.2026 - overlay, geo, логи и ссылки.",
-      "spent_minutes": 386,
-      "spent_time": "6 ч 26 мин",
+      "spent_minutes": 506,
+      "spent_time": "8 ч 26 мин",
       "message_count": 52,
       "sessions": [
         "11:48-12:40",
         "15:24-17:23",
         "18:49-21:39"
       ],
-      "intensity": 0.792
+      "intensity": 0.832
     },
     {
       "date": "2026-05-30",
       "description": "30.05.2026 - оффер, AdMob ID, Android fixes.",
-      "spent_minutes": 488,
-      "spent_time": "8 ч 08 мин",
+      "spent_minutes": 608,
+      "spent_time": "10 ч 08 мин",
       "message_count": 71,
       "sessions": [
         "09:36-14:40",
         "16:22-16:30",
         "19:48-21:59"
       ],
-      "intensity": 1.001
+      "intensity": 1
     },
     {
       "date": "2026-05-31",
       "description": "31.05.2026 - Plinko OK, AdMob, SDK, GitHub.",
-      "spent_minutes": 93,
-      "spent_time": "1 ч 33 мин",
+      "spent_minutes": 153,
+      "spent_time": "2 ч 33 мин",
       "message_count": 5,
       "sessions": [
         "15:01-15:01",
         "17:09-18:12"
       ],
-      "intensity": 0.191
+      "intensity": 0.252
     },
     {
       "date": "2026-06-01",
       "description": "01.06.2026 - popup, safe area, deeplink.",
-      "spent_minutes": 96,
-      "spent_time": "1 ч 36 мин",
+      "spent_minutes": 156,
+      "spent_time": "2 ч 36 мин",
       "message_count": 28,
       "sessions": [
         "08:42-08:53",
         "13:37-14:15",
         "20:42-20:43"
       ],
-      "intensity": 0.197
+      "intensity": 0.257
     },
     {
       "date": "2026-06-02",
       "description": "02.06.2026 - Firebase, purchases, offer fixes.",
-      "spent_minutes": 305,
-      "spent_time": "5 ч 05 мин",
+      "spent_minutes": 425,
+      "spent_time": "7 ч 05 мин",
       "message_count": 47,
       "sessions": [
         "10:24-10:52",
@@ -208,19 +208,19 @@
         "16:04-17:58",
         "20:05-21:00"
       ],
-      "intensity": 0.625
+      "intensity": 0.699
     },
     {
       "date": "2026-06-03",
       "description": "03.06.2026 - Lucky Wheel, SDK, CI/CD, changelog.",
-      "spent_minutes": 133,
-      "spent_time": "2 ч 13 мин",
+      "spent_minutes": 193,
+      "spent_time": "3 ч 13 мин",
       "message_count": 28,
       "sessions": [
         "14:21-15:13",
         "19:31-20:22"
       ],
-      "intensity": 0.273
+      "intensity": 0.317
     }
   ]
 }
