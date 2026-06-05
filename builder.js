@@ -75,6 +75,9 @@ let builds = [];
 let selectedBuildId = "";
 let toastBuildId = "";
 let detailOpen = false;
+let recentReleaseDownloads = [];
+let recentReleaseDownloadsLoaded = false;
+let recentReleaseDownloadsLoading = false;
 
 iconEditor.inert = true;
 versionAdvanced.inert = true;
@@ -250,6 +253,9 @@ function showConsoleTab(tab = "console") {
   if (buildListKicker) buildListKicker.textContent = kicker;
   if (buildListTitle) buildListTitle.textContent = listTitle;
   renderDownloadList();
+  if (normalized === "downloads") {
+    loadRecentReleaseDownloads();
+  }
 }
 
 function setDetailOpen(isOpen) {
@@ -598,6 +604,86 @@ function renderArtifactDownloads(build) {
     .join("");
 }
 
+function assetDownloadType(assetName = "") {
+  const lower = String(assetName || "").toLowerCase();
+  if (lower.endsWith(".apk") || lower.includes("apk_")) return "APK";
+  if (lower.endsWith(".aab") || lower.includes("aab_")) return "AAB";
+  return "";
+}
+
+function packageFromRelease(release, assets) {
+  const text = [
+    release?.name || "",
+    release?.tag_name || "",
+    ...assets.map((asset) => asset.name || "")
+  ].join(" ");
+  return text.match(/com\.[a-z0-9_.-]+/i)?.[0] || "";
+}
+
+function releaseToDownloadBuild(release) {
+  const assets = (release.assets || [])
+    .map((asset) => ({
+      type: assetDownloadType(asset.name),
+      name: asset.name || "",
+      url: asset.browser_download_url || ""
+    }))
+    .filter((asset) => asset.type && asset.url)
+    .sort((a, b) => {
+      const order = { APK: 0, AAB: 1 };
+      return (order[a.type] ?? 9) - (order[b.type] ?? 9);
+    });
+
+  if (assets.length === 0) return null;
+  const packageName = packageFromRelease(release, assets);
+  const publishedAt = release.published_at || release.created_at || "";
+  return {
+    id: `release-${release.id || release.tag_name || release.name}`,
+    artifactReady: true,
+    artifactText: `${assets.map((asset) => asset.type).join("+")} готов из GitHub Release`,
+    releasePublishedAt: publishedAt,
+    iconDataUrl: repositoryIconFallbacks["zey-win/plinko"],
+    payload: {
+      app_name: release.name || "GitHub Release",
+      package_name: packageName || "zey-win/ci-cd",
+      build_format: assets.some((asset) => asset.type === "APK") && assets.some((asset) => asset.type === "AAB")
+        ? "apk_aab"
+        : assets[0]?.type?.toLowerCase() || "apk"
+    },
+    releaseUrl: release.html_url || "",
+    artifactDownloads: assets
+  };
+}
+
+async function loadRecentReleaseDownloads() {
+  if (recentReleaseDownloadsLoaded || recentReleaseDownloadsLoading) return;
+  recentReleaseDownloadsLoading = true;
+  renderDownloadList();
+  try {
+    const response = await fetch("https://api.github.com/repos/zey-win/ci-cd/releases?per_page=20", {
+      headers: { accept: "application/vnd.github+json" },
+      cache: "no-store"
+    });
+    if (!response.ok) {
+      throw new Error("Не удалось загрузить GitHub Releases.");
+    }
+    const releases = await response.json();
+    const sortedReleases = Array.isArray(releases)
+      ? [...releases].sort((a, b) => {
+        const bTime = Date.parse(b.published_at || b.created_at || "") || 0;
+        const aTime = Date.parse(a.published_at || a.created_at || "") || 0;
+        return bTime - aTime;
+      })
+      : [];
+    recentReleaseDownloads = sortedReleases.map(releaseToDownloadBuild).filter(Boolean);
+    recentReleaseDownloadsLoaded = true;
+  } catch {
+    recentReleaseDownloads = [];
+  } finally {
+    recentReleaseDownloadsLoading = false;
+    renderDownloadList();
+  }
+}
+
 function downloadButtonFor(build, type) {
   const wanted = String(type || "").toLowerCase();
   const item = (build.artifactDownloads || []).find((download) => {
@@ -605,7 +691,7 @@ function downloadButtonFor(build, type) {
     return haystack.includes(wanted);
   });
   if (!item) {
-    return `<span class="download-missing">${escapeHtml(type)} не найден</span>`;
+    return "";
   }
   return `
     <a class="download-button" href="${escapeHtml(item.url)}" download="${escapeHtml(item.name)}" target="_blank" rel="noreferrer">
@@ -617,12 +703,20 @@ function downloadButtonFor(build, type) {
 function renderDownloadList() {
   if (!downloadList) return;
   const readyBuilds = builds.filter((build) => build.artifactReady && build.artifactDownloads?.length);
-  if (readyBuilds.length === 0) {
-    downloadList.innerHTML = '<p class="active-build-empty">Когда сборка закончит APK/AAB, здесь появятся свежие ссылки на скачивание.</p>';
+  const seenUrls = new Set(readyBuilds.flatMap((build) => (build.artifactDownloads || []).map((item) => item.url)));
+  const releaseBuilds = recentReleaseDownloads.filter((build) => {
+    const urls = (build.artifactDownloads || []).map((item) => item.url);
+    return urls.some((url) => !seenUrls.has(url));
+  });
+  const rows = [...readyBuilds, ...releaseBuilds];
+  if (rows.length === 0) {
+    downloadList.innerHTML = recentReleaseDownloadsLoading
+      ? '<p class="active-build-empty">Загружаю свежие APK/AAB из GitHub Releases...</p>'
+      : '<p class="active-build-empty">Когда сборка закончит APK/AAB, здесь появятся свежие ссылки на скачивание.</p>';
     return;
   }
 
-  downloadList.innerHTML = readyBuilds
+  downloadList.innerHTML = rows
     .map((build) => `
       <article class="download-row">
         <span class="download-icon" aria-hidden="true" style="${build.iconDataUrl ? `background-image: url('${build.iconDataUrl.replace(/'/g, "%27")}')` : ""}"></span>
