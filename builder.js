@@ -60,6 +60,7 @@ const downloadList = document.querySelector("#download-list");
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "");
 const configuredOperatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const operatorStorageKey = "zeywin_builder_operator_key";
+const buildsStorageKey = "zeywin_builder_builds_v1";
 const repositoryIconFallbacks = {
   "zey-win/plinko": "./repo-icons/zey-win__plinko.png?v=20260605"
 };
@@ -282,6 +283,101 @@ function createBuild(payload) {
     releaseUrl: "",
     artifactDownloads: []
   };
+}
+
+function safeStoredPayload(payload = {}) {
+  const stored = { ...payload };
+  stored.zeywin_api_key = "";
+  stored.icon_png_base64 = "";
+  return stored;
+}
+
+function safeStoredIcon(iconDataUrl = "") {
+  const value = String(iconDataUrl || "");
+  return value.startsWith("data:") ? "" : value;
+}
+
+function storedBuild(build) {
+  return {
+    id: build.id,
+    requestId: build.requestId,
+    runId: build.runId,
+    payload: safeStoredPayload(build.payload),
+    packageName: build.packageName,
+    startVersionCode: build.startVersionCode,
+    startedAt: build.startedAt,
+    totalSeconds: build.totalSeconds,
+    secondsLeft: build.secondsLeft,
+    actionUrl: build.actionUrl,
+    iconDataUrl: safeStoredIcon(build.iconDataUrl),
+    state: build.state,
+    meta: build.meta,
+    logLine: build.logLine,
+    logMeta: build.logMeta,
+    logOutput: build.logOutput,
+    artifactText: build.artifactText,
+    artifactReady: build.artifactReady,
+    releaseUrl: build.releaseUrl,
+    artifactDownloads: build.artifactDownloads || []
+  };
+}
+
+function persistBuilds() {
+  try {
+    localStorage.setItem(buildsStorageKey, JSON.stringify(builds.slice(0, 30).map(storedBuild)));
+  } catch {
+    // Build UI continues to work without persistent browser storage.
+  }
+}
+
+function reviveBuild(raw) {
+  const totalSeconds = Number(raw.totalSeconds || 600);
+  const startedAt = Number(raw.startedAt || Date.now());
+  const elapsed = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
+  const secondsLeft = raw.artifactReady || raw.state === "failed"
+    ? Number(raw.secondsLeft || 0)
+    : Math.max(0, totalSeconds - elapsed);
+  return {
+    ...raw,
+    payload: safeStoredPayload(raw.payload || {}),
+    packageName: raw.packageName || raw.payload?.package_name || "",
+    startVersionCode: Number(raw.startVersionCode || raw.payload?.version_code || 1),
+    startedAt,
+    totalSeconds,
+    secondsLeft,
+    timerId: 0,
+    logRefreshId: 0,
+    artifactRefreshId: 0,
+    artifactDownloads: Array.isArray(raw.artifactDownloads) ? raw.artifactDownloads : []
+  };
+}
+
+function restoreBuilds() {
+  let restored = [];
+  try {
+    restored = JSON.parse(localStorage.getItem(buildsStorageKey) || "[]");
+  } catch {
+    restored = [];
+  }
+  if (!Array.isArray(restored) || restored.length === 0) {
+    renderBuildList();
+    renderSelectedBuildDetails();
+    return;
+  }
+
+  builds = restored.map(reviveBuild).filter((build) => build.id && build.payload);
+  selectedBuildId = builds[0]?.id || "";
+  persistBuilds();
+  renderBuildList();
+  renderSelectedBuildDetails();
+  builds.forEach((build) => {
+    if (!build.artifactReady && build.state !== "failed") {
+      startBuildTimer(build, build.totalSeconds || 600, build.secondsLeft || build.totalSeconds || 600);
+      startBuildLogPolling(build);
+      startArtifactPolling(build);
+    }
+  });
+  renderDownloadList();
 }
 
 function getSelectedBuild() {
@@ -570,6 +666,7 @@ function setBuildLogState(build, meta, text) {
     consoleLogMeta.innerHTML = meta;
     consoleLogOutput.textContent = text;
   }
+  persistBuilds();
 }
 
 function toggleIconEditor() {
@@ -736,10 +833,10 @@ function setBuildTimer(build, secondsLeft) {
   updateBuildCard(build);
 }
 
-function startBuildTimer(build, totalSeconds = 600) {
+function startBuildTimer(build, totalSeconds = 600, initialSeconds = totalSeconds) {
   clearInterval(build.timerId);
   build.totalSeconds = totalSeconds;
-  let left = totalSeconds;
+  let left = Math.max(0, Math.min(totalSeconds, Number(initialSeconds || totalSeconds)));
   setBuildTimer(build, left);
   build.timerId = setInterval(() => {
     left = Math.max(0, left - 1);
@@ -765,6 +862,7 @@ function updateBuildToast(build, meta, logLine = "") {
   if (logLine) {
     build.logLine = logLine;
   }
+  persistBuilds();
   if (build.id !== toastBuildId) {
     updateBuildCard(build);
     return;
@@ -1059,6 +1157,7 @@ async function submitBuild(event) {
   const build = createBuild(payload);
   builds = [build, ...builds];
   selectedBuildId = build.id;
+  persistBuilds();
   renderPayload(payload);
   openConsole(build);
   showBuildToast(build);
@@ -1140,6 +1239,7 @@ function setArtifactSignal(build, ready, text, url = "", downloads = []) {
       actionsLink.href = url;
     }
   }
+  persistBuilds();
   renderDownloadList();
   updateBuildCard(build);
 }
@@ -1226,6 +1326,7 @@ async function findRun(build) {
     if (build.id === selectedBuildId) {
       consoleActionsLink.href = data.run.htmlUrl;
     }
+    persistBuilds();
   }
   return build.runId;
 }
@@ -1262,6 +1363,7 @@ async function refreshLogs() {
     logOutput.textContent = output;
     build.logMeta = logMeta.innerHTML;
     build.logOutput = output;
+    persistBuilds();
     updateBuildCard(build);
   } catch (error) {
     logMeta.textContent = "Ошибка логов";
@@ -1331,6 +1433,7 @@ operatorInput.addEventListener("change", loadLatestVersion);
 operatorInput.addEventListener("blur", loadLatestVersion);
 initOperatorKey();
 syncBuildMode();
+restoreBuilds();
 
 iconInput.addEventListener("change", async () => {
   const file = iconInput.files?.[0];
