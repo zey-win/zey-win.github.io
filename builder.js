@@ -47,6 +47,7 @@ const consolePayloadList = document.querySelector("#console-payload-list");
 const consoleLogMeta = document.querySelector("#console-log-meta");
 const consoleLogOutput = document.querySelector("#console-log-output");
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "");
+const operatorStorageKey = "zeywin_builder_operator_key";
 
 let selectedIconDataUrl = "";
 let logRefreshId = 0;
@@ -58,6 +59,66 @@ let toastBuildId = "";
 
 iconEditor.inert = true;
 versionAdvanced.inert = true;
+
+function readOperatorKeyFromLocation() {
+  const search = new URLSearchParams(window.location.search);
+  const hashText = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+  const hash = new URLSearchParams(hashText);
+  return (
+    search.get("operator_key") ||
+    search.get("builder_key") ||
+    hash.get("operator_key") ||
+    hash.get("builder_key") ||
+    ""
+  ).trim();
+}
+
+function clearOperatorKeyFromLocation() {
+  const url = new URL(window.location.href);
+  let changed = false;
+  ["operator_key", "builder_key"].forEach((key) => {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  });
+
+  const hash = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
+  ["operator_key", "builder_key"].forEach((key) => {
+    if (hash.has(key)) {
+      hash.delete(key);
+      changed = true;
+    }
+  });
+  const nextHash = hash.toString();
+  url.hash = nextHash ? `#${nextHash}` : "";
+
+  if (changed) {
+    window.history.replaceState(null, "", url);
+  }
+}
+
+function initOperatorKey() {
+  const keyFromUrl = readOperatorKeyFromLocation();
+  let storedKey = "";
+  try {
+    storedKey = localStorage.getItem(operatorStorageKey) || "";
+  } catch {
+    storedKey = "";
+  }
+  const key = keyFromUrl || storedKey;
+  if (key) {
+    operatorInput.value = key;
+    try {
+      localStorage.setItem(operatorStorageKey, key);
+    } catch {
+      // Local storage can be disabled in hardened browsers; hidden input still gets the URL key.
+    }
+  }
+  if (keyFromUrl) {
+    clearOperatorKeyFromLocation();
+  }
+}
 
 function getBuildFormats() {
   return Array.from(document.querySelectorAll('input[name="build_format"]:checked'))
@@ -894,6 +955,7 @@ document.querySelectorAll('input[name="build_format"]').forEach((input) => {
 packageInput.addEventListener("change", loadLatestVersion);
 operatorInput.addEventListener("change", loadLatestVersion);
 operatorInput.addEventListener("blur", loadLatestVersion);
+initOperatorKey();
 syncBuildMode();
 
 iconInput.addEventListener("change", async () => {

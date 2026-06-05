@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app" />
     <title>ZeyWin Android Builder</title>
-    <link rel="stylesheet" href="./styles.css?v=20260605-builder-clean1" />
+    <link rel="stylesheet" href="./styles.css?v=20260605-builder-clean2" />
   </head>
   <body>
     <main class="quiet-home" aria-labelledby="home-title">
@@ -44,16 +44,11 @@
                   <button class="secondary" type="button" id="load-repos">Выбрать игру из GitHub</button>
                 </div>
               </div>
-              <div class="field-row">
-                <label class="field" for="game_ref">
-                  <span>Ветка / tag / commit</span>
-                  <input id="game_ref" name="game_ref" value="main" autocomplete="off" />
-                </label>
-                <label class="field" for="package_name">
-                  <span>Android package</span>
-                  <input id="package_name" name="package_name" value="com.playsocialgames.plinkofun" autocomplete="off" />
-                </label>
-              </div>
+              <input id="game_ref" name="game_ref" type="hidden" value="main" autocomplete="off" />
+              <label class="field" for="package_name">
+                <span>Android package</span>
+                <input id="package_name" name="package_name" value="com.playsocialgames.plinkofun" autocomplete="off" />
+              </label>
               <div class="app-name-editor">
                 <button class="app-icon-trigger" type="button" id="app-icon-trigger" aria-expanded="false" aria-controls="icon-editor" aria-label="Настроить иконку приложения">
                   <span class="icon-preview" id="icon-preview" aria-hidden="true"></span>
@@ -78,6 +73,32 @@
                 <span>ZeyWin API key</span>
                 <input id="zeywin_api_key" name="zeywin_api_key" type="password" autocomplete="off" />
               </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>AdMob</legend>
+              <label class="field" for="admob_android_app_id">
+                <span>Android App ID</span>
+                <input id="admob_android_app_id" name="admob_android_app_id" value="ca-app-pub-6988952582458184~6613433438" autocomplete="off" />
+              </label>
+              <div class="field-row">
+                <label class="field" for="admob_android_banner_id">
+                  <span>Banner</span>
+                  <input id="admob_android_banner_id" name="admob_android_banner_id" value="ca-app-pub-6988952582458184/4530693980" autocomplete="off" />
+                </label>
+                <label class="field" for="admob_android_interstitial_id">
+                  <span>Interstitial</span>
+                  <input id="admob_android_interstitial_id" name="admob_android_interstitial_id" value="ca-app-pub-6988952582458184/9211185343" autocomplete="off" />
+                </label>
+                <label class="field" for="admob_android_rewarded_id">
+                  <span>Rewarded</span>
+                  <input id="admob_android_rewarded_id" name="admob_android_rewarded_id" value="ca-app-pub-6988952582458184/7061184633" autocomplete="off" />
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>Сборка</legend>
               <div class="build-mode-shell">
                 <div class="build-mode" aria-label="Тип сборки">
                   <label>
@@ -112,56 +133,27 @@
                   <small>Обычно не трогать: версия подставляется автоматически из последнего Actions build.</small>
                 </div>
                 <div class="field-row">
-                <label class="field" for="version_mode">
-                  <span>Версия</span>
-                  <select id="version_mode" name="version_mode">
-                    <option value="auto_next">auto_next</option>
-                    <option value="manual">manual</option>
-                  </select>
-                </label>
-                <label class="field" for="version_name">
-                  <span>AAB versionName</span>
-                  <input id="version_name" name="version_name" value="1" autocomplete="off" />
-                </label>
-                <label class="field" for="version_code">
-                  <span>AAB versionCode</span>
-                  <input id="version_code" name="version_code" inputmode="numeric" value="1" autocomplete="off" />
-                </label>
+                  <label class="field" for="version_mode">
+                    <span>Версия</span>
+                    <select id="version_mode" name="version_mode">
+                      <option value="auto_next">auto_next</option>
+                      <option value="manual">manual</option>
+                    </select>
+                  </label>
+                  <label class="field" for="version_name">
+                    <span>AAB versionName</span>
+                    <input id="version_name" name="version_name" value="1" autocomplete="off" />
+                  </label>
+                  <label class="field" for="version_code">
+                    <span>AAB versionCode</span>
+                    <input id="version_code" name="version_code" inputmode="numeric" value="1" autocomplete="off" />
+                  </label>
                 </div>
               </div>
             </fieldset>
 
-            <fieldset>
-              <legend>AdMob</legend>
-              <label class="field" for="admob_android_app_id">
-                <span>Android App ID</span>
-                <input id="admob_android_app_id" name="admob_android_app_id" value="ca-app-pub-6988952582458184~6613433438" autocomplete="off" />
-              </label>
-              <div class="field-row">
-                <label class="field" for="admob_android_banner_id">
-                  <span>Banner</span>
-                  <input id="admob_android_banner_id" name="admob_android_banner_id" value="ca-app-pub-6988952582458184/4530693980" autocomplete="off" />
-                </label>
-                <label class="field" for="admob_android_interstitial_id">
-                  <span>Interstitial</span>
-                  <input id="admob_android_interstitial_id" name="admob_android_interstitial_id" value="ca-app-pub-6988952582458184/9211185343" autocomplete="off" />
-                </label>
-                <label class="field" for="admob_android_rewarded_id">
-                  <span>Rewarded</span>
-                  <input id="admob_android_rewarded_id" name="admob_android_rewarded_id" value="ca-app-pub-6988952582458184/7061184633" autocomplete="off" />
-                </label>
-              </div>
-            </fieldset>
-
-            <fieldset class="operator-box">
-              <legend>Доступ</legend>
-              <label class="field" for="operator_key">
-                <span>Ключ запуска backend</span>
-                <input id="operator_key" name="operator_key" type="password" autocomplete="off" />
-              </label>
-            </fieldset>
-
             <div class="form-actions">
+              <input id="operator_key" name="operator_key" type="hidden" autocomplete="off" />
               <p class="build-status" id="build-status" aria-live="polite">Готово к запуску сборки.</p>
               <button class="build-button" type="submit">Билд</button>
             </div>
@@ -261,6 +253,6 @@
       </div>
     </section>
 
-    <script src="./builder.js?v=20260605-builder-clean1"></script>
+    <script src="./builder.js?v=20260605-builder-clean2"></script>
   </body>
 </html>
