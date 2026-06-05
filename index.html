@@ -110,7 +110,7 @@
                     </span>
                   </label>
                   <label>
-                    <input type="checkbox" name="build_format" value="aab" />
+                    <input type="checkbox" name="build_format" value="aab" checked />
                     <span>
                       <b>AAB релиз</b>
                       <small>следующая версия из Actions</small>
@@ -200,7 +200,10 @@
 
             <div class="console-artifact" id="console-artifact">
               <span aria-hidden="true"></span>
-              <b>APK/AAB ещё не готов</b>
+              <div class="console-artifact-body">
+                <b>APK/AAB ещё не готов</b>
+                <div class="artifact-downloads" id="console-downloads" hidden></div>
+              </div>
             </div>
 
             <div class="console-payload-card">
