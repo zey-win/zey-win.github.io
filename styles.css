@@ -964,7 +964,22 @@ select:focus {
   grid-template-columns: minmax(0, 1fr);
 }
 
+.console-shell[data-tab="builds"] .console-workspace,
+.console-shell[data-tab="console"][data-detail="closed"] .console-workspace {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .console-shell[data-tab="logs"] .console-builds {
+  display: none;
+}
+
+.console-shell[data-tab="builds"] .console-log-card,
+.console-shell[data-tab="console"][data-detail="closed"] .console-log-card {
+  display: none;
+}
+
+.console-shell[data-tab="console"][data-detail="closed"] .console-payload-card,
+.console-shell[data-tab="builds"] .console-payload-card {
   display: none;
 }
 

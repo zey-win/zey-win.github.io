@@ -73,6 +73,7 @@ let payloadAnimationTimer = 0;
 let builds = [];
 let selectedBuildId = "";
 let toastBuildId = "";
+let detailOpen = false;
 
 iconEditor.inert = true;
 versionAdvanced.inert = true;
@@ -224,6 +225,7 @@ function setConsoleMenuOpen(isOpen) {
 function showConsoleTab(tab = "console") {
   const normalized = ["console", "builds", "downloads", "logs"].includes(tab) ? tab : "console";
   consoleShell.dataset.tab = normalized;
+  consoleShell.dataset.detail = detailOpen ? "open" : "closed";
   setConsoleMenuOpen(false);
   consoleTabs.forEach((button) => {
     button.classList.toggle("is-active", button.dataset.consoleTab === normalized);
@@ -247,6 +249,11 @@ function showConsoleTab(tab = "console") {
   if (buildListKicker) buildListKicker.textContent = kicker;
   if (buildListTitle) buildListTitle.textContent = listTitle;
   renderDownloadList();
+}
+
+function setDetailOpen(isOpen) {
+  detailOpen = Boolean(isOpen);
+  consoleShell.dataset.detail = detailOpen ? "open" : "closed";
 }
 
 function createBuild(payload) {
@@ -298,14 +305,16 @@ function formatSeconds(secondsLeft) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function openConsole(build = null, tab = "console") {
+function openConsole(build = null, tab = "console", { openDetails = false } = {}) {
   if (shell.classList.contains("is-open")) {
     closeBuilder({ restoreFocus: false });
   }
   consoleShell.classList.add("is-open");
   consoleShell.setAttribute("aria-hidden", "false");
+  const shouldOpenDetails = openDetails || tab === "logs";
+  setDetailOpen(shouldOpenDetails);
   if (build?.id) {
-    selectBuild(build.id, { openDetails: false });
+    selectBuild(build.id, { openDetails: shouldOpenDetails });
   } else {
     renderBuildList();
     renderSelectedBuildDetails();
@@ -537,6 +546,7 @@ function renderDownloadList() {
 
 function selectBuild(id, { openDetails = false } = {}) {
   selectedBuildId = id;
+  setDetailOpen(openDetails);
   renderBuildList();
   renderSelectedBuildDetails();
   if (openDetails) {
