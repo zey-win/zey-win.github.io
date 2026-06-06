@@ -408,7 +408,28 @@ function formatSeconds(secondsLeft) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function openConsole(build = null, tab = "console", { openDetails = false } = {}) {
+function routeFromHash() {
+  const hash = window.location.hash.replace(/^#/, "");
+  if (hash === "console") return "console";
+  const match = hash.match(/^console-(builds|downloads|logs)$/);
+  return match ? match[1] : "";
+}
+
+function writeConsoleRoute(tab = "console") {
+  const normalized = ["console", "builds", "downloads", "logs"].includes(tab) ? tab : "console";
+  const url = new URL(window.location.href);
+  url.hash = normalized === "console" ? "console" : `console-${normalized}`;
+  window.history.pushState({ consoleTab: normalized }, "", url);
+}
+
+function closeConsoleRoute() {
+  consoleShell.classList.remove("is-open");
+  consoleShell.setAttribute("aria-hidden", "true");
+  setDetailOpen(false);
+  setConsoleMenuOpen(false);
+}
+
+function openConsole(build = null, tab = "console", { openDetails = false, updateRoute = true } = {}) {
   if (shell.classList.contains("is-open")) {
     closeBuilder({ restoreFocus: false });
   }
@@ -423,6 +444,9 @@ function openConsole(build = null, tab = "console", { openDetails = false } = {}
     renderSelectedBuildDetails();
   }
   showConsoleTab(tab);
+  if (updateRoute) {
+    writeConsoleRoute(tab);
+  }
 }
 
 function renderConsolePayload(payload) {
@@ -1560,6 +1584,7 @@ consoleTabs.forEach((button) => {
       return;
     }
     showConsoleTab(tab);
+    writeConsoleRoute(tab);
   });
 });
 consoleMenuToggle.addEventListener("click", () => {
@@ -1584,6 +1609,19 @@ operatorInput.addEventListener("blur", loadLatestVersion);
 initOperatorKey();
 syncBuildMode();
 restoreBuilds();
+const initialConsoleRoute = routeFromHash();
+if (initialConsoleRoute) {
+  openConsole(null, initialConsoleRoute, { updateRoute: false });
+}
+
+window.addEventListener("popstate", () => {
+  const tab = routeFromHash();
+  if (tab) {
+    openConsole(null, tab, { updateRoute: false });
+  } else {
+    closeConsoleRoute();
+  }
+});
 
 iconInput.addEventListener("change", async () => {
   const file = iconInput.files?.[0];

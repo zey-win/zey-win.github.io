@@ -960,6 +960,31 @@ select:focus {
   align-items: start;
 }
 
+.console-shell[data-tab="console"] .console-main {
+  display: grid;
+  align-content: start;
+}
+
+.console-shell[data-tab="console"] .console-top,
+.console-shell[data-tab="console"] .console-pipeline-column,
+.console-shell[data-tab="console"] .console-log-card {
+  display: none;
+}
+
+.console-shell[data-tab="console"] .console-workspace {
+  width: min(1040px, 100%);
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.console-shell[data-tab="console"] .console-builds {
+  min-height: calc(100vh - 68px);
+}
+
+.console-shell[data-tab="console"] .active-build-list {
+  max-height: calc(100vh - 176px);
+}
+
 .console-shell[data-tab="logs"] .console-workspace {
   grid-template-columns: minmax(0, 1fr);
 }
