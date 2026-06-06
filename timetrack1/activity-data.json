@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-06T18:40:28+03:00",
+  "generated_at": "2026-06-06T20:02:11+03:00",
   "timezone": "Europe/Kiev",
   "source": {
     "chat_id": 5187562045,
@@ -22,7 +22,7 @@
   "rows": [
     {
       "date": "2026-05-18",
-      "description": "18.05.2026 - GitHub доступы, архивы репо, CI/CD и стор.",
+      "description": "18.05.2026 - GitHub доступы, CI/CD, фиксы офферов и стор.",
       "spent_minutes": 240,
       "spent_time": "4 ч",
       "message_count": 7,
@@ -33,7 +33,7 @@
     },
     {
       "date": "2026-05-20",
-      "description": "20.05.2026 - SDK demo, API key, трекер задач.",
+      "description": "20.05.2026 - SDK demo, API key, трекер и in-progress.",
       "spent_minutes": 240,
       "spent_time": "4 ч",
       "message_count": 8,
@@ -44,7 +44,7 @@
     },
     {
       "date": "2026-05-21",
-      "description": "21.05.2026 - Plinko: доступы, SDK, реклама, APK.",
+      "description": "21.05.2026 - Plinko, GitHub правки, SDK-синхронизация и тесты.",
       "spent_minutes": 210,
       "spent_time": "3 ч 30 мин",
       "message_count": 34,
@@ -56,7 +56,7 @@
     },
     {
       "date": "2026-05-22",
-      "description": "22.05.2026 - Plinko CI/CD, VPN, ROOT, сборки.",
+      "description": "22.05.2026 - VPN/ROOT правила, доступы, репо и созвоны.",
       "spent_minutes": 360,
       "spent_time": "6 ч",
       "message_count": 21,
@@ -68,7 +68,7 @@
     },
     {
       "date": "2026-05-23",
-      "description": "23.05.2026 - Play Market, GitHub, тестовые сборки.",
+      "description": "23.05.2026 - GitHub Actions, CI/CD, автотесты и модерация приложений.",
       "spent_minutes": 270,
       "spent_time": "4 ч 30 мин",
       "message_count": 33,
@@ -81,7 +81,7 @@
     },
     {
       "date": "2026-05-24",
-      "description": "24.05.2026 - Android телефон, WebView, логи.",
+      "description": "24.05.2026 - Модерация, реклама, WebView, логи устройств.",
       "spent_minutes": 240,
       "spent_time": "4 ч",
       "message_count": 26,
@@ -94,7 +94,7 @@
     },
     {
       "date": "2026-05-25",
-      "description": "25.05.2026 - Предмодерация, review, правки публикации.",
+      "description": "25.05.2026 - Предмодерация, review, обучение рекламы и публикация.",
       "spent_minutes": 270,
       "spent_time": "4 ч 30 мин",
       "message_count": 7,
@@ -106,7 +106,7 @@
     },
     {
       "date": "2026-05-26",
-      "description": "26.05.2026 - AdMob, Firebase, offer URL, аналитика.",
+      "description": "26.05.2026 - Firebase, AdMob, offer URL и no-fill диагностика.",
       "spent_minutes": 330,
       "spent_time": "5 ч 30 мин",
       "message_count": 39,
@@ -120,7 +120,7 @@
     },
     {
       "date": "2026-05-27",
-      "description": "27.05.2026 - AAB, APK, ADB, Analytics, AdMob.",
+      "description": "27.05.2026 - AAB/APK, ADB, оффер, Firebase и AdMob.",
       "spent_minutes": 510,
       "spent_time": "8 ч 30 мин",
       "message_count": 44,
@@ -134,7 +134,7 @@
     },
     {
       "date": "2026-05-28",
-      "description": "28.05.2026 - Реклама, тесты, причины показов.",
+      "description": "28.05.2026 - Реклама, тесты показов и диагностика причин.",
       "spent_minutes": 240,
       "spent_time": "4 ч",
       "message_count": 3,
@@ -147,7 +147,7 @@
     },
     {
       "date": "2026-05-29",
-      "description": "29.05.2026 - Overlay, geo, логи, рабочие ссылки.",
+      "description": "29.05.2026 - Overlay, geo, referral cache и конверсия оффера.",
       "spent_minutes": 450,
       "spent_time": "7 ч 30 мин",
       "message_count": 46,
@@ -160,7 +160,7 @@
     },
     {
       "date": "2026-05-30",
-      "description": "30.05.2026 - Offer flow, AdMob IDs, Android fixes.",
+      "description": "30.05.2026 - AdMob IDs, оффер, deeplink, safe area.",
       "spent_minutes": 540,
       "spent_time": "9 ч",
       "message_count": 64,
@@ -173,7 +173,7 @@
     },
     {
       "date": "2026-05-31",
-      "description": "31.05.2026 - Plinko OK, SDK, GitHub, AdMob.",
+      "description": "31.05.2026 - Plinko OK, SDK, GitHub и AdMob IDs.",
       "spent_minutes": 150,
       "spent_time": "2 ч 30 мин",
       "message_count": 5,
@@ -185,7 +185,7 @@
     },
     {
       "date": "2026-06-01",
-      "description": "01.06.2026 - Popup, safe area, deeplink.",
+      "description": "01.06.2026 - Popup, GGBet оффер, автоповорот и deeplink.",
       "spent_minutes": 150,
       "spent_time": "2 ч 30 мин",
       "message_count": 28,
@@ -198,7 +198,7 @@
     },
     {
       "date": "2026-06-02",
-      "description": "02.06.2026 - Firebase, purchases, offer fixes.",
+      "description": "02.06.2026 - Plinko 1.2.5, AdMob, purchases и проверки.",
       "spent_minutes": 420,
       "spent_time": "7 ч",
       "message_count": 47,
@@ -212,7 +212,7 @@
     },
     {
       "date": "2026-06-03",
-      "description": "03.06.2026 - Lucky Wheel, Plinko, SDK, CI/CD.",
+      "description": "03.06.2026 - Lucky Wheel, Plinko, CI/CD и ревью стор.",
       "spent_minutes": 180,
       "spent_time": "3 ч",
       "message_count": 28,
@@ -224,7 +224,7 @@
     },
     {
       "date": "2026-06-05",
-      "description": "05.06.2026 - GitHub Pages, чек, QR, Android.",
+      "description": "05.06.2026 - Адаптивный UI, логи, реверс и финал игр.",
       "spent_minutes": 60,
       "spent_time": "1 ч",
       "message_count": 7,
@@ -235,7 +235,7 @@
     },
     {
       "date": "2026-06-06",
-      "description": "06.06.2026 - Pages проверка, Android logs, финальная сверка.",
+      "description": "06.06.2026 - Все игры, WebView, автотесты и video ads.",
       "spent_minutes": 60,
       "spent_time": "1 ч",
       "message_count": 6,

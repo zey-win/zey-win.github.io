@@ -9,7 +9,7 @@ const billableHoursEl = document.querySelector("#billable-hours");
 const billingFormulaEl = document.querySelector("#billing-formula");
 const amountDueEl = document.querySelector("#amount-due");
 const hourlyRate = 19;
-const dataVersion = "20260606-rounded-hours";
+const dataVersion = "20260606-telegram-real-desc";
 
 function esc(value) {
   return String(value)
