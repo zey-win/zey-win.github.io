@@ -9,7 +9,7 @@ const billableHoursEl = document.querySelector("#billable-hours");
 const billingFormulaEl = document.querySelector("#billing-formula");
 const amountDueEl = document.querySelector("#amount-due");
 const hourlyRate = 19;
-const dataVersion = "20260606-yesterday-today";
+const dataVersion = "20260606-rounded-hours";
 
 function esc(value) {
   return String(value)
@@ -25,7 +25,19 @@ function dateStamp(isoDate) {
 }
 
 function compactTime(value) {
-  return value.replace(" ч ", "h ").replace(" мин", "m");
+  const text = String(value).trim();
+  const fullTime = text.match(/^(\d+)\s*ч(?:\s*(\d+)\s*мин)?$/);
+  if (fullTime) {
+    const minutes = fullTime[2] ? ` ${fullTime[2]}m` : "";
+    return `${fullTime[1]}h${minutes}`;
+  }
+
+  const minutesOnly = text.match(/^(\d+)\s*мин$/);
+  if (minutesOnly) {
+    return `${minutesOnly[1]}m`;
+  }
+
+  return text.replace(" ч ", "h ").replace(" мин", "m");
 }
 
 function money(value) {
@@ -61,7 +73,9 @@ fetch(`./activity-data.json?v=${dataVersion}`, { cache: "no-store" })
     invoiceDaysEl.textContent = `${data.totals.days} days`;
     generatedAtEl.textContent = `Date: ${generatedStamp(data.generated_at)}`;
     const billableHours = data.totals.spent_minutes / 60;
-    const roundedHours = billableHours.toFixed(2);
+    const roundedHours = Number.isInteger(billableHours)
+      ? String(billableHours)
+      : billableHours.toFixed(1);
     billableHoursEl.textContent = `${roundedHours} h`;
     billingFormulaEl.textContent = `${roundedHours}h x $${hourlyRate}`;
     amountDueEl.textContent = money(billableHours * hourlyRate);
