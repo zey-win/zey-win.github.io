@@ -985,6 +985,29 @@ select:focus {
   max-height: calc(100vh - 176px);
 }
 
+.console-shell[data-tab="console"][data-detail="open"] .console-top {
+  display: flex;
+}
+
+.console-shell[data-tab="console"][data-detail="open"] .console-workspace {
+  width: min(1580px, 100%);
+  margin: 0 auto;
+  grid-template-columns: minmax(300px, 0.9fr) minmax(240px, 0.66fr) minmax(360px, 1.14fr);
+}
+
+.console-shell[data-tab="console"][data-detail="open"] .console-builds {
+  min-height: 0;
+}
+
+.console-shell[data-tab="console"][data-detail="open"] .active-build-list {
+  max-height: min(520px, calc(100vh - 210px));
+}
+
+.console-shell[data-tab="console"][data-detail="open"] .console-pipeline-column,
+.console-shell[data-tab="console"][data-detail="open"] .console-log-card {
+  display: grid;
+}
+
 .console-shell[data-tab="logs"] .console-workspace {
   grid-template-columns: minmax(0, 1fr);
 }

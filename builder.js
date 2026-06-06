@@ -250,7 +250,7 @@ function showConsoleTab(tab = "console") {
     logs: ["Логи Action", "GitHub Actions", "Логи выбранной сборки"]
   };
   const [title, kicker, listTitle] = titles[normalized];
-  consoleTitle.textContent = title;
+  consoleTitle.textContent = normalized === "console" && detailOpen ? "Подробности сборки" : title;
   if (buildListKicker) buildListKicker.textContent = kicker;
   if (buildListTitle) buildListTitle.textContent = listTitle;
   renderDownloadList();
@@ -410,16 +410,28 @@ function formatSeconds(secondsLeft) {
 
 function routeFromHash() {
   const hash = window.location.hash.replace(/^#/, "");
-  if (hash === "console") return "console";
+  if (hash === "console") return { tab: "console", buildId: "", openDetails: false };
+  const detailMatch = hash.match(/^console-build\/(.+)$/);
+  if (detailMatch) {
+    return {
+      tab: "console",
+      buildId: decodeURIComponent(detailMatch[1]),
+      openDetails: true
+    };
+  }
   const match = hash.match(/^console-(builds|downloads|logs)$/);
-  return match ? match[1] : "";
+  return match ? { tab: match[1], buildId: "", openDetails: match[1] === "logs" } : null;
 }
 
-function writeConsoleRoute(tab = "console") {
+function writeConsoleRoute(tab = "console", buildId = "") {
   const normalized = ["console", "builds", "downloads", "logs"].includes(tab) ? tab : "console";
   const url = new URL(window.location.href);
-  url.hash = normalized === "console" ? "console" : `console-${normalized}`;
-  window.history.pushState({ consoleTab: normalized }, "", url);
+  url.hash = buildId
+    ? `console-build/${encodeURIComponent(buildId)}`
+    : normalized === "console"
+      ? "console"
+      : `console-${normalized}`;
+  window.history.pushState({ consoleTab: normalized, buildId }, "", url);
 }
 
 function closeConsoleRoute() {
@@ -438,14 +450,14 @@ function openConsole(build = null, tab = "console", { openDetails = false, updat
   const shouldOpenDetails = openDetails || tab === "logs";
   setDetailOpen(shouldOpenDetails);
   if (build?.id) {
-    selectBuild(build.id, { openDetails: shouldOpenDetails });
+    selectBuild(build.id, { openDetails: shouldOpenDetails, updateRoute: false });
   } else {
     renderBuildList();
     renderSelectedBuildDetails();
   }
   showConsoleTab(tab);
   if (updateRoute) {
-    writeConsoleRoute(tab);
+    writeConsoleRoute(tab, shouldOpenDetails ? selectedBuildId : "");
   }
 }
 
@@ -814,13 +826,16 @@ function renderDownloadList() {
   `;
 }
 
-function selectBuild(id, { openDetails = false } = {}) {
+function selectBuild(id, { openDetails = false, updateRoute = false } = {}) {
   selectedBuildId = id;
   setDetailOpen(openDetails);
   renderBuildList();
   renderSelectedBuildDetails();
   if (openDetails) {
     showConsoleTab("console");
+    if (updateRoute) {
+      writeConsoleRoute("console", id);
+    }
   }
 }
 
@@ -1569,12 +1584,15 @@ if (timerRing) {
 }
 buildToast.addEventListener("click", () => {
   const build = getBuild(toastBuildId) || getSelectedBuild();
-  openConsole(build, "console");
+  openConsole(build, "console", { openDetails: Boolean(build?.id) });
 });
 activeBuildList.addEventListener("click", (event) => {
   const card = event.target.closest("[data-build-id]");
   if (!card) return;
-  selectBuild(card.dataset.buildId, { openDetails: true });
+  const build = getBuild(card.dataset.buildId);
+  if (build) {
+    openConsole(build, "console", { openDetails: true });
+  }
 });
 consoleTabs.forEach((button) => {
   button.addEventListener("click", () => {
@@ -1583,6 +1601,7 @@ consoleTabs.forEach((button) => {
       openLogs(selectedBuildId);
       return;
     }
+    setDetailOpen(false);
     showConsoleTab(tab);
     writeConsoleRoute(tab);
   });
@@ -1611,13 +1630,21 @@ syncBuildMode();
 restoreBuilds();
 const initialConsoleRoute = routeFromHash();
 if (initialConsoleRoute) {
-  openConsole(null, initialConsoleRoute, { updateRoute: false });
+  const build = initialConsoleRoute.buildId ? getBuild(initialConsoleRoute.buildId) : null;
+  openConsole(build, initialConsoleRoute.tab, {
+    openDetails: initialConsoleRoute.openDetails && Boolean(build),
+    updateRoute: false
+  });
 }
 
 window.addEventListener("popstate", () => {
-  const tab = routeFromHash();
-  if (tab) {
-    openConsole(null, tab, { updateRoute: false });
+  const route = routeFromHash();
+  if (route) {
+    const build = route.buildId ? getBuild(route.buildId) : null;
+    openConsole(build, route.tab, {
+      openDetails: route.openDetails && Boolean(build),
+      updateRoute: false
+    });
   } else {
     closeConsoleRoute();
   }
