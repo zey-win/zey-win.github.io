@@ -58,6 +58,122 @@ async function loadIcon(repo, ref) {
   } catch { setIcon(null); }
 }
 
+// ---- Sound effects via AudioContext ----
+let audioCtx = null;
+function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function playFanfare() {
+  try {
+    const ctx = getAudioCtx();
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.6);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.15); osc.stop(ctx.currentTime + i * 0.15 + 0.6);
+    });
+  } catch {}
+}
+function playErrorSound() {
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth"; osc.frequency.value = 150;
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); osc.stop(ctx.currentTime + 0.5);
+  } catch {}
+}
+
+// ---- Confetti ----
+function fireConfetti(duration = 4000) {
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:999";
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  const particles = [];
+  const colors = ["#ffd700","#ff6347","#00ff7f","#ff69b4","#87ceeb","#ffa500"];
+  for (let i = 0; i < 100; i++) {
+    particles.push({
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height * -1,
+      vx: (Math.random() - 0.5) * 4, vy: Math.random() * 3 + 1,
+      w: Math.random() * 8 + 4, h: Math.random() * 4 + 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 1, rot: Math.random() * 360
+    });
+  }
+  const start = Date.now();
+  function anim() {
+    const elapsed = Date.now() - start;
+    if (elapsed > duration) { canvas.remove(); return; }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const p of particles) {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.02; p.rot += 2;
+      p.alpha = Math.max(0, 1 - elapsed / duration);
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180);
+      ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+    requestAnimationFrame(anim);
+  }
+  anim();
+}
+
+// ---- Particles for "in_progress" cards ----
+let particleIntervals = {};
+function startParticles(cardEl, runId) {
+  if (particleIntervals[runId]) return;
+  const canvas = document.createElement("canvas");
+  canvas.style.cssText = "position:absolute;inset:0;pointer-events:none;width:100%;height:100%;border-radius:8px";
+  cardEl.style.position = "relative";
+  cardEl.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  function resize() { canvas.width = cardEl.offsetWidth; canvas.height = cardEl.offsetHeight; }
+  resize();
+  const particles = [];
+  for (let i = 0; i < 15; i++) {
+    particles.push({
+      x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5), vy: Math.random() * 0.5 + 0.2,
+      size: Math.random() * 3 + 2, alpha: Math.random() * 0.5 + 0.5,
+      alphaDir: Math.random() > 0.5 ? -1 : 1, fall: 0
+    });
+  }
+  let lastTime = Date.now();
+  function anim() {
+    const dt = (Date.now() - lastTime) / 16; lastTime = Date.now();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let hasParticles = false;
+    for (const p of particles) {
+      p.fall += dt * 0.03;
+      p.y += p.vy + p.fall * 0.1;
+      p.x += p.vx + Math.sin(p.fall * 0.1) * 0.3;
+      p.alpha += 0.02 * p.alphaDir;
+      if (p.alpha > 1) { p.alpha = 1; p.alphaDir = -1; }
+      if (p.alpha < 0.1) { p.alpha = 0.1; p.alphaDir = 1; }
+      // remove particles that fall beyond 300px from start
+      if (p.fall > 300) { p.x = Math.random() * canvas.width; p.y = -10; p.fall = 0; }
+      ctx.globalAlpha = p.alpha;
+      ctx.fillStyle = "#ffd700";
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      hasParticles = true;
+    }
+    if (hasParticles) particleIntervals[runId] = requestAnimationFrame(anim);
+  }
+  anim();
+  particleIntervals[runId] = null; // store reference for cleanup
+}
+function stopParticles(runId) {
+  if (particleIntervals[runId]) { cancelAnimationFrame(particleIntervals[runId]); delete particleIntervals[runId]; }
+}
+
+// ---- Z button ----
 zBtn.addEventListener("click", async () => {
   const repo = repoSelect.value;
   const def = getDef(repo);
@@ -77,14 +193,11 @@ zBtn.addEventListener("click", async () => {
     let res = await fetch(fbUrl);
     if (!res.ok && def.firebase_url) res = await fetch(def.firebase_url);
     if (res.ok) {
-      const text = await res.text();
-      const base64 = btoa(text);
+      const text = await res.text(); const base64 = btoa(text);
       firebaseJson = `data:application/json;base64,${base64}`;
       if (fbStatus) { fbStatus.textContent = "✅ firebase загружен"; }
       if (fbBtn) { fbBtn.textContent = "📁 Заменить файл"; }
-    } else {
-      if (fbStatus) { fbStatus.textContent = "❌ firebase не найден"; fbStatus.style.color = "#f85149"; }
-    }
+    } else { if (fbStatus) { fbStatus.textContent = "❌ firebase не найден"; fbStatus.style.color = "#f85149"; } }
   } catch { if (fbStatus) { fbStatus.textContent = "❌ ошибка"; fbStatus.style.color = "#f85149"; } }
 });
 
@@ -110,6 +223,7 @@ let customIcon = null;
 let firebaseJson = null;
 const runMeta = {};
 const releases = [];
+let prevRunStatuses = {}; // track status changes for sounds
 
 const REPO_NAMES = {
   "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette",
@@ -122,7 +236,6 @@ function repoFromTitle(t) {
   for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo;
   return null;
 }
-
 function parseTitle(title) {
   if (!title) return { app: "Build", pkg: "" };
   const parts = title.replace(/^Android:\s*/i, "").split(" / ").map(p => p.trim());
@@ -133,16 +246,14 @@ async function loadReleases() {
   try {
     const res = await fetch("https://api.github.com/repos/zey-win/ci-cd/releases?per_page=50");
     if (!res.ok) return;
-    const data = await res.json();
-    releases.length = 0;
+    const data = await res.json(); releases.length = 0;
     for (const r of (data || [])) {
       const tag = r.tag_name || "";
       const assets = (r.assets || []).map(a => ({ name: a.name, url: a.browser_download_url }));
       releases.push({ tag, name: r.name, assets });
     }
-  } catch { }
+  } catch {}
 }
-
 function findDownloads(pkg) {
   if (!pkg) return { apk: null, aab: null };
   const p = pkg.toLowerCase();
@@ -164,14 +275,12 @@ iconFile.addEventListener("change", e => {
   r.onload = () => { customIcon = r.result; gameIcon.src = r.result; gameIcon.style.display = "block"; };
   r.readAsDataURL(f);
 });
-
 firebaseFile.addEventListener("change", e => {
   const f = e.target.files[0];
   if (!f) return;
   if (f.type !== "application/json") { alert("Only JSON"); return; }
   const r = new FileReader();
-  r.onload = () => { firebaseJson = r.result; };
-  r.readAsDataURL(f);
+  r.onload = () => { firebaseJson = r.result; }; r.readAsDataURL(f);
 });
 
 repoSelect.addEventListener("change", updateBranches);
@@ -179,11 +288,9 @@ branchSelect.addEventListener("change", () => loadIcon(repoSelect.value, branchS
 
 let iconLoadedDeferred = null;
 newBuildBtn.addEventListener("click", () => {
-  customIcon = null;
-  firebaseJson = null;
+  customIcon = null; firebaseJson = null;
   modal.classList.remove("hidden");
   updateBranches();
-  // ensure icon loads before submit
   iconLoadedDeferred = loadIcon(repoSelect.value, branchSelect.value);
 });
 cancelBtn.addEventListener("click", () => modal.classList.add("hidden"));
@@ -214,31 +321,22 @@ form.addEventListener("submit", async e => {
     if (!res.ok) { alert("Error: " + await res.text().catch(() => "")); return; }
     const d = await res.json();
     const cacheKey = `${p.game_repository}@${p.game_ref}`;
-    if (customIcon) {
-      iconCache.set(cacheKey, customIcon);
-    } else {
-      // load icon from API for this branch and cache it
+    if (customIcon) iconCache.set(cacheKey, customIcon);
+    else {
       loadIcon(p.game_repository, p.game_ref).then(() => {
         const ico = iconCache.get(cacheKey);
-        if (ico && d.run) {
-          runMeta[d.run.id] = { icon: ico, ver: p.version_name || "", code: p.version_code || "" };
-          renderAll();
-        }
+        if (ico && d.run) { runMeta[d.run.id] = { icon: ico, ver: p.version_name || "", code: p.version_code || "" }; renderAll(); }
       });
     }
     if (d.run) {
-      // try to get icon immediately from cache (if custom or preloaded)
       let iconForBuild = customIcon || iconCache.get(cacheKey) || null;
-      // if no icon yet, wait for deferred load
       if (!iconForBuild && iconLoadedDeferred) {
         try { await iconLoadedDeferred; } catch {}
         iconForBuild = iconCache.get(cacheKey) || null;
       }
       if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
-      runs = [d.run, ...runs];
-      renderAll();
+      runs = [d.run, ...runs]; renderAll();
     } else loadBuilds();
-    // cleanup
     iconLoadedDeferred = null;
   } catch (err) { alert("Error: " + err.message); }
 });
@@ -246,13 +344,19 @@ form.addEventListener("submit", async e => {
 async function loadBuilds() {
   if (loading) loading.style.display = "inline-flex";
   try {
-    const [runsRes] = await Promise.all([
-      fetch(`${apiBase}/api/runs`),
-      loadReleases()
-    ]);
+    const [runsRes] = await Promise.all([fetch(`${apiBase}/api/runs`), loadReleases()]);
     if (!runsRes.ok) { buildsContainer.innerHTML = "<p>No builds</p>"; return; }
     const d = await runsRes.json();
+    const oldRuns = runs;
     runs = Array.isArray(d.runs) ? d.runs : [];
+    // check for status changes
+    for (const r of runs) {
+      const old = oldRuns.find(o => o.id === r.id);
+      if (old && old.status !== "completed" && r.status === "completed") {
+        if (r.conclusion === "success") { playFanfare(); fireConfetti(4000); }
+        else { playErrorSound(); }
+      }
+    }
     renderAll();
   } catch { buildsContainer.innerHTML = "<p>Load error</p>"; }
   finally { if (loading) loading.style.display = "none"; }
@@ -260,12 +364,10 @@ async function loadBuilds() {
 
 async function deleteRun(runId, e) {
   if (!confirm("Delete this build?")) return;
-  const btn = e?.target;
-  if (btn) btn.disabled = true;
+  const btn = e?.target; if (btn) btn.disabled = true;
   try {
     await fetch(`${apiBase}/api/cancel`, { method: "POST", headers: op(), body: JSON.stringify({ run_id: runId }) });
-    runs = runs.filter(r => r.id !== runId);
-    renderAll();
+    runs = runs.filter(r => r.id !== runId); renderAll();
   } catch (err) { alert("Delete error: " + err.message); }
   finally { if (btn) btn.disabled = false; }
 }
@@ -274,11 +376,18 @@ function renderAll() {
   const active = runs.filter(r => r.status !== "completed");
   const done = runs.filter(r => r.status === "completed" && r.conclusion === "success");
   const fail = runs.filter(r => r.status === "completed" && r.conclusion !== "success");
-  activeContainer.innerHTML = active.length ? active.map(r => card(r)).join("") : "";
-  buildsContainer.innerHTML = done.length || fail.length ? [...done, ...fail].slice(0, 30).map(r => card(r)).join("") : "";
+  activeContainer.innerHTML = active.length ? active.map((r, i) => card(r, i)).join("") : "";
+  buildsContainer.innerHTML = done.length || fail.length ? [...done, ...fail].slice(0, 30).map((r, i) => card(r, i)).join("") : "";
+  // Start particles for active cards
+  if (active.length) {
+    setTimeout(() => {
+      const cards = activeContainer.querySelectorAll(".build-card");
+      cards.forEach((el, i) => { const rid = active[i]?.id; if (rid) startParticles(el, rid); });
+    }, 50);
+  }
 }
 
-function card(r) {
+function card(r, idx) {
   const raw = r.displayTitle || r.name || "";
   const { app, pkg } = parseTitle(raw);
   const concl = r.conclusion || "";
@@ -293,12 +402,10 @@ function card(r) {
   else if (repo === "zey-win/plinko" && appLower.includes("plinko") && !appLower.includes("falling") && !appLower.includes("real")) iconKey = "zey-win/plinko@app/plinko";
   else if (repo === "zey-win/plinko" && appLower.includes("falling")) iconKey = "zey-win/plinko@main";
   else iconKey = `${repo}@main`;
-  
   const meta = runMeta[r.id];
   let iconUrl = null;
   if (meta && meta.icon) iconUrl = meta.icon;
   else if (iconKey) iconUrl = iconCache.get(iconKey);
-  
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
 
   let label, cls;
@@ -314,21 +421,20 @@ function card(r) {
     ${concl === "success" ? `
       ${dlApk.apk ? `<a class="dl-btn" href="${dlApk.apk}" download>APK</a>` : ""}
       ${dlApk.aab ? `<a class="dl-btn" href="${dlApk.aab}" download>AAB</a>` : ""}
-    ` : `
-      <a href="${esc(url)}" target="_blank" class="log-btn">Логи →</a>
-    `}
+    ` : `<a href="${esc(url)}" target="_blank" class="log-btn">Логи →</a>`}
   </div>`;
 
   const verStr = (meta && meta.ver) || String(r.runNumber || "");
   const codeStr = (meta && meta.code) || String(r.runAttempt || "1");
   const versionInfo = verStr ? `| Version ${verStr} (code: ${codeStr})` : "";
-  return `<div class="build-card">${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
+  // alternating background: even idx = slightly lighter
+  const bgStyle = idx !== undefined && idx % 2 === 0 ? 'style="background:#1a202c"' : 'style="background:#161b22"';
+  return `<div class="build-card" ${bgStyle}>${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
 }
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
 (async () => {
-  updateBranches();
-  loadBuilds();
+  updateBranches(); loadBuilds();
   setInterval(loadBuilds, 15000);
 })();
