@@ -1,6 +1,9 @@
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "") || "https://zeywin-android-builder-api.vercel.app";
 const operatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const operatorHeaders = () => operatorKey ? { "Content-Type": "application/json", "x-builder-key": operatorKey } : { "Content-Type": "application/json" };
+const repoSelect = document.getElementById("repo-select");
+const gameIcon = document.getElementById("game-icon");
+const iconCache = new Map();
 const buildsContainer = document.getElementById("builds-container");
 const activeContainer = document.getElementById("active-container");
 const modal = document.getElementById("modal");
@@ -11,8 +14,38 @@ const loading = document.getElementById("loading");
 
 let localRuns = [];
 
+// Icon loading
+async function loadIcon(repo) {
+  if (iconCache.has(repo)) {
+    gameIcon.src = iconCache.get(repo);
+    gameIcon.style.display = "block";
+    return;
+  }
+  try {
+    const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=main`, {
+      headers: operatorHeaders()
+    });
+    if (!res.ok) { gameIcon.style.display = "none"; return; }
+    const data = await res.json();
+    if (data.ok && data.icon?.dataUrl) {
+      iconCache.set(repo, data.icon.dataUrl);
+      gameIcon.src = data.icon.dataUrl;
+      gameIcon.style.display = "block";
+    } else {
+      gameIcon.style.display = "none";
+    }
+  } catch {
+    gameIcon.style.display = "none";
+  }
+}
+
+repoSelect.addEventListener("change", () => loadIcon(repoSelect.value));
+
 // Modal
-newBuildBtn.addEventListener("click", () => modal.classList.remove("hidden"));
+newBuildBtn.addEventListener("click", () => {
+  modal.classList.remove("hidden");
+  loadIcon(repoSelect.value);
+});
 cancelBtn.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
 
