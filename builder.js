@@ -5,14 +5,13 @@ const modal = document.getElementById("modal");
 const form = document.getElementById("build-form");
 const newBuildBtn = document.getElementById("new-build");
 const cancelBtn = document.getElementById("modal-cancel");
-const ciCdRunsUrl = "https://api.github.com/repos/zey-win/ci-cd/actions/runs?event=workflow_dispatch&per_page=30";
-const idleLabels = ["waiting", "queued", "requested", "pending", "neutral"];
 
-// --- Modal ---
+// Modal
 newBuildBtn.addEventListener("click", () => modal.classList.remove("hidden"));
 cancelBtn.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
 
+// Create build
 form.addEventListener("submit", async e => {
   e.preventDefault();
   const fd = new FormData(form);
@@ -24,13 +23,13 @@ form.addEventListener("submit", async e => {
   };
   modal.classList.add("hidden");
   try {
-    const res = await fetch(`${apiBase}/api/create-build`, {
+    const res = await fetch(`${apiBase}/api/build`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     if (!res.ok) {
-      const txt = await res.text().catch(() => "");
+      const txt = await res.text().catch(() => "error");
       alert("Ошибка: " + txt);
       return;
     }
@@ -40,82 +39,47 @@ form.addEventListener("submit", async e => {
   }
 });
 
-// --- Load builds ---
+// Load all
 async function loadBuilds() {
-  await Promise.all([loadReadyBuilds(), loadActiveRuns()]);
-}
-
-async function loadReadyBuilds() {
   try {
-    const res = await fetch(`${apiBase}/api/builds`);
-    if (!res.ok) { buildsContainer.innerHTML = "<p>Нет готовых сборок</p>"; return; }
+    const res = await fetch(`${apiBase}/api/runs`);
+    if (!res.ok) { buildsContainer.innerHTML = "<p>Нет сборок</p>"; return; }
     const data = await res.json();
-    const builds = Array.isArray(data) ? data : data.builds || [];
-    if (!builds.length) { buildsContainer.innerHTML = "<p>Нет готовых сборок</p>"; return; }
-    buildsContainer.innerHTML = builds.map(b => renderBuildCard(b)).join("");
+    const runs = Array.isArray(data.runs) ? data.runs : [];
+    const completed = runs.filter(r => r.status === "completed");
+    const active = runs.filter(r => r.status !== "completed");
+    buildsContainer.innerHTML = completed.length
+      ? completed.slice(0, 30).map(r => renderCard(r)).join("")
+      : "<p>Нет завершённых сборок</p>";
+    activeContainer.innerHTML = active.length
+      ? active.map(r => renderCard(r)).join("")
+      : "<p>Нет активных сборок</p>";
   } catch {
     buildsContainer.innerHTML = "<p>Ошибка загрузки</p>";
   }
 }
 
-async function loadActiveRuns() {
-  try {
-    const res = await fetch(ciCdRunsUrl);
-    if (!res.ok) { activeContainer.innerHTML = ""; return; }
-    const data = await res.json();
-    const runs = (data.workflow_runs || []).filter(r => r.status !== "completed");
-    if (!runs.length) { activeContainer.innerHTML = "<p>Нет активных сборок</p>"; return; }
-    activeContainer.innerHTML = runs.map(r => renderRunCard(r)).join("");
-  } catch {
-    activeContainer.innerHTML = "";
-  }
-}
-
-function renderBuildCard(b) {
-  const name = b.payload?.app_name || b.app_name || "App";
-  const ver = b.payload?.version_name || b.version_name || "?";
-  const fmt = b.payload?.build_format || b.build_format || "apk";
-  const status = b.status || "completed";
-  const cls = status === "completed" || status === "success" ? "status-success" : status === "failure" || status === "error" ? "status-failure" : "status-pending";
-  const label = status === "completed" || status === "success" ? "✅ Готов" : status === "failure" || status === "error" ? "❌ Ошибка" : "⏳";
-  // download URL
-  const apkUrl = b.payload?.download_url_apk || b.download_url_apk || "#";
-  const aabUrl = b.payload?.download_url_aab || b.download_url_aab || "#";
-  const hasApk = apkUrl && apkUrl !== "#";
-  const hasAab = aabUrl && aabUrl !== "#";
+function renderCard(r) {
+  const name = r.displayTitle || r.name || "Сборка";
+  const concl = r.conclusion || "";
+  const status = r.status || "unknown";
+  const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
+  const url = r.htmlUrl || "#";
+  let label, cls;
+  if (concl === "success") { label = "✅ Готов"; cls = "status-success"; }
+  else if (concl === "failure") { label = "❌ Ошибка"; cls = "status-failure"; }
+  else if (["waiting","queued","pending"].includes(status)) { label = "⏳ В очереди"; cls = "status-pending"; }
+  else if (status === "completed") { label = "❌ Ошибка"; cls = "status-failure"; }
+  else { label = "🔄 " + status; cls = "status-pending"; }
   return `<div class="build-card">
     <div class="info">
       <div class="app-name">${esc(name)}</div>
-      <div class="meta">v${esc(ver)} · ${fmt.toUpperCase()} · ${esc(b.id || "")}</div>
+      <div class="meta">${esc(created)}</div>
     </div>
     <div class="actions">
-      ${hasApk ? `<a href="${esc(apkUrl)}" download>APK</a>` : ""}
-      ${hasAab ? `<a href="${esc(aabUrl)}" download>AAB</a>` : ""}
+      <a href="${esc(url)}" target="_blank">Логи →</a>
     </div>
     <span class="status ${cls}">${label}</span>
-  </div>`;
-}
-
-function renderRunCard(r) {
-  const status = r.status || "unknown";
-  const conclusion = r.conclusion || "";
-  const name = r.display_title || r.name || "Сборка";
-  const createdAt = r.created_at ? new Date(r.created_at).toLocaleString() : "";
-  let statusLabel, cls;
-  if (conclusion === "success") { statusLabel = "✅ Готов"; cls = "status-success"; }
-  else if (conclusion === "failure") { statusLabel = "❌ Ошибка"; cls = "status-failure"; }
-  else if (idleLabels.includes(status)) { statusLabel = "⏳ В очереди"; cls = "status-pending"; }
-  else { statusLabel = "🔄 " + status; cls = "status-pending"; }
-  const url = r.html_url || "#";
-  return `<div class="build-card">
-    <div class="info">
-      <div class="app-name">${esc(name)}</div>
-      <div class="meta">${esc(createdAt)}</div>
-    </div>
-    <div class="actions">
-      <a href="${esc(url)}" target="_blank">Логи</a>
-    </div>
-    <span class="status ${cls}">${statusLabel}</span>
   </div>`;
 }
 
