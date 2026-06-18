@@ -71,8 +71,7 @@ async function loadIcon(repo, ref) {
 // Z button: fill form with repo defaults + fetch firebase
 zBtn.addEventListener("click", async () => {
   const repo = repoSelect.value;
-  const def = REPO_DEFAULTS[repo];
-  if (!def) { alert("Нет данных для этого репозитория. Данные берутся из Unity PlayerSettings репозитория."); return; }
+  const def = getDef(repo);
   document.querySelector('[name="app_name"]').value = def.app_name || "";
   document.querySelector('[name="package_name"]').value = def.package_name || "";
   document.querySelector('[name="zeywin_api_key"]').value = def.zeywin_api_key || "";
