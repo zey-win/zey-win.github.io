@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "941183085931",
+    "project_id": "slots-pot",
+    "storage_bucket": "slots-pot.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941183085931:android:1e129602f72e9a3d12f02e",
+        "android_client_info": {
+          "package_name": "com.playmaxsolutions.slotspot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCe5xx_faia2AHeXjD-r0eeeHQsEo3hYR8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

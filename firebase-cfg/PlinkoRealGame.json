@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "809971610216",
+    "project_id": "plinko-real-game",
+    "storage_bucket": "plinko-real-game.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:809971610216:android:7b3d09360f7bc19209c1dd",
+        "android_client_info": {
+          "package_name": "com.gaming.plinko"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKkhmvphLROuI3vHNiwQoAhpFYP857nd4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

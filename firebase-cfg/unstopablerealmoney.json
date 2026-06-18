@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "460657443817",
+    "project_id": "unstopablerealmoney",
+    "storage_bucket": "unstopablerealmoney.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:460657443817:android:fdb3219810c61043e70178",
+        "android_client_info": {
+          "package_name": "com.playsocialgames.chicken.road"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCS5eZrULJQM2HQfFEAPsvtoVUYYMWGZG0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

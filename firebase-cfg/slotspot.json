@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "832945137223",
+    "project_id": "slotspot-6f4e5",
+    "storage_bucket": "slotspot-6f4e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:832945137223:android:e5a583aa53d09134e5b362",
+        "android_client_info": {
+          "package_name": "com.playmaxsolutions.slotspot"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAl_KLK2QeZFRJB0v409IPopQW2F--TyGw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

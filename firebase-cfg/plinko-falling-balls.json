@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "766103805351",
+    "project_id": "plinko-falling-balls",
+    "storage_bucket": "plinko-falling-balls.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:766103805351:android:555d1462b6d6f261112a82",
+        "android_client_info": {
+          "package_name": "com.falling.plinko"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARrTZNditURKuDuAzuf_gd6SfifU_HbUw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

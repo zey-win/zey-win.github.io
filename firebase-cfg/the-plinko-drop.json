@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "195099182424",
+    "project_id": "the-plinko-drop",
+    "storage_bucket": "the-plinko-drop.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195099182424:android:5cfc6e3bd0181ff312112d",
+        "android_client_info": {
+          "package_name": "com.plinko.balldrop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpFzuR-4Uv-RX_-Idd9iieeqr-vjFviJ4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
