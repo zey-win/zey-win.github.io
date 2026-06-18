@@ -74,11 +74,10 @@ function startSparks(cardEl, runId) {
     vx: (Math.random() - 0.5) * 0.8, vy: Math.random() * 0.5 + 0.2,
     size: Math.random() * 2 + 1.5, alpha: Math.random() * 0.8 + 0.2, aDir: -0.015 - Math.random() * 0.02
   });
-  let frame = 0;
   function anim() {
-    frame++; ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const s of sparks) {
-      s.y += s.vy; s.x += s.vx + Math.sin(frame * 0.03 + s.x * 0.1) * 0.3; s.alpha += s.aDir;
+      s.y += s.vy; s.x += s.vx + Math.sin(Date.now() * 0.00003 + s.x * 0.1) * 0.3; s.alpha += s.aDir;
       if (s.alpha < 0.05) { s.alpha = 0.05; s.aDir = -s.aDir; } if (s.alpha > 0.8) { s.alpha = 0.8; s.aDir = -s.aDir; }
       if (s.y > canvas.height + 10) { s.y = -5; s.x = Math.random() * canvas.width; s.alpha = 0.5; }
       ctx.globalAlpha = s.alpha; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
@@ -86,7 +85,7 @@ function startSparks(cardEl, runId) {
     }
     particleIntervals[runId] = requestAnimationFrame(anim);
   }
-  anim();
+  particleIntervals[runId] = requestAnimationFrame(anim);
 }
 function stopSparks(runId) { if (particleIntervals[runId]) { cancelAnimationFrame(particleIntervals[runId]); delete particleIntervals[runId]; } }
 
@@ -146,7 +145,6 @@ form.addEventListener("submit", async e => {
       let iconForBuild = customIcon || iconCache.get(cacheKey) || null;
       if (!iconForBuild && iconLoadedDeferred) { try { await iconLoadedDeferred; } catch {} iconForBuild = iconCache.get(cacheKey) || null; }
       if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
-      // start timer 23:00
       timers[d.run.id] = { start: Date.now(), total: 23 * 60 * 1000 };
       runs = [d.run, ...runs]; renderAll();
     } else loadBuilds();
@@ -195,16 +193,8 @@ function card(r, idx) {
 
   const actions = `<div class="actions"><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">❌</button>${concl === "success" ? `${downloads.apk ? `<a class="dl-btn" href="${downloads.apk}" download>APK</a>` : ""}${downloads.aab ? `<a class="dl-btn" href="${downloads.aab}" download>AAB</a>` : ""}` : `<a href="${esc(url)}" target="_blank" class="log-btn">Логи →</a>`}</div>`;
   const verStr = (meta && meta.ver) || String(r.runNumber || ""); const codeStr = (meta && meta.code) || String(r.runAttempt || "1"); const versionInfo = verStr ? `| Version ${verStr} (code: ${codeStr})` : "";
-  // compute timer display for active builds
-  let timerHtml = "";
-  if (timers[r.id]) {
-    const elapsed = Date.now() - timers[r.id].start;
-    const left = Math.max(0, timers[r.id].total - elapsed);
-    const m = Math.floor(left / 60000);
-    const s = Math.floor((left % 60000) / 1000);
-    if (left > 0) timerHtml = `<span class="timer">⏱ ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}</span>`;
-    else delete timers[r.id];
-  }
+  let timerHtml = ""; const t = timers[r.id];
+  if (t) { const left = Math.max(0, t.total - (Date.now() - t.start)); if (left > 0) { const m = Math.floor(left / 60000); const s = Math.floor((left % 60000) / 1000); const cs = Math.floor((left % 1000) / 10); timerHtml = `<span class="timer" style="color:#ffd700">⏱ ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")},${String(cs).padStart(2,"0")}</span>`; } else { delete timers[r.id]; } }
   const bgStyle = idx !== undefined && idx % 2 === 0 ? 'style="background:#1a202c"' : 'style="background:#161b22"';
   return `<div class="build-card" ${bgStyle}>${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
 }
@@ -213,27 +203,13 @@ function esc(s) { const d = document.createElement("div"); d.textContent = s; re
 
 async function preloadIcons() {
   const repos = Object.keys(REPO_NAMES);
-  const allBranches = [...new Set(repos.flatMap(r => {
-    const b = BRANCHES[r]; if (b) return b.map(bi => `${r}@${bi.ref}`);
-    return [`${r}@main`];
-  }))];
-  // also load fallback per-repo icons
+  const allBranches = [...new Set(repos.flatMap(r => { const b = BRANCHES[r]; if (b) return b.map(bi => `${r}@${bi.ref}`); return [`${r}@main`]; }))];
   await Promise.all(allBranches.map(async key => {
-    const [repo, ref] = key.split("@");
-    if (!repo || !ref) return;
-    try {
-      const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(ref)}`, { headers: op() });
-      if (!res.ok) return;
-      const d = await res.json();
-      if (d.ok && d.icon && d.icon.dataUrl) { iconCache.set(key, d.icon.dataUrl); icons[repo] = d.icon.dataUrl; }
-    } catch {}
+    const [repo, ref] = key.split("@"); if (!repo || !ref) return;
+    try { const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(ref)}`, { headers: op() }); if (!res.ok) return; const d = await res.json(); if (d.ok && d.icon && d.icon.dataUrl) { iconCache.set(key, d.icon.dataUrl); icons[repo] = d.icon.dataUrl; } } catch {}
   }));
 }
 
-// Timer tick every second for active builds
-setInterval(() => {
-  const active = runs.filter(r => r.status !== "completed");
-  if (active.some(r => timers[r.id])) renderAll();
-}, 1000);
+setInterval(() => { const active = runs.filter(r => r.status !== "completed"); if (active.some(r => timers[r.id])) renderAll(); }, 50);
 
 (async () => { await preloadIcons(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
