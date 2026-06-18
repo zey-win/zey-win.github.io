@@ -50,11 +50,9 @@ async function preloadIcons() {
       const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=main`, { headers: op() });
       if (!res.ok) return;
       const d = await res.json();
-      if (d.ok && d.icon?.dataUrl) { icons[repo] = d.icon.dataUrl; console.log("Icon loaded:", repo, d.icon.dataUrl.slice(0,40)); }
-      else console.log("No icon for:", repo);
-    } catch(e) { console.log("Icon error:", repo, e.message); }
+      if (d.ok && d.icon && d.icon.dataUrl) icons[repo] = d.icon.dataUrl;
+    } catch(e) { /* ignore */ }
   }));
-  console.log("All icons:", Object.keys(icons));
 }
 
 iconFile.addEventListener("change", e => {
