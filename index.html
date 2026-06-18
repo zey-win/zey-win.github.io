@@ -1,5 +1,54 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>Site</title></head>
-<body style="margin:0;background:#000;height:100vh"></body>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ZeyWin — сборки</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+<h1>ZeyWin CI/CD</h1>
+<p>Сборка APK/AAB через GitHub Actions</p>
+<button id="new-build">+ Новая сборка</button>
+</header>
+
+<div id="modal" class="hidden">
+<h2>Создать сборку</h2>
+<form id="build-form">
+<label>Репозиторий <select name="game_repository">
+<option value="zey-win/plinko">Plinko</option>
+<option value="zey-win/blackjack">Blackjack</option>
+<option value="zey-win/roulette">Roulette</option>
+<option value="zey-win/dragon-tiger">Dragon Tiger</option>
+<option value="zey-win/baccarat-tiger">Baccarat Tiger</option>
+<option value="zey-win/wheel-of-fortune">Wheel of Fortune</option>
+<option value="zey-win/Unstopable">Unstopable</option>
+</select></label>
+<label>Название <input name="app_name" required></label>
+<label>Package <input name="package_name" required></label>
+<label>Формат <select name="build_format">
+<option value="apk">APK</option>
+<option value="aab">AAB</option>
+<option value="apk_aab">APK+AAB</option>
+</select></label>
+<div class="modal-actions">
+<button type="button" id="modal-cancel">Отмена</button>
+<button type="submit">Запустить</button>
+</div>
+</form>
+</div>
+
+<section>
+<h2>Готовые сборки</h2>
+<div id="builds-container"></div>
+</section>
+
+<section>
+<h2>Активные сборки</h2>
+<div id="active-container"></div>
+</section>
+
+<script src="builder.js"></script>
+</body>
 </html>
