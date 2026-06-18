@@ -9,14 +9,17 @@ const form = $("build-form");
 const newBuildBtn = $("new-build");
 const cancelBtn = $("modal-cancel");
 const repoSelect = $("repo-select");
+const branchInput = $("branch-input");
 const gameIcon = $("game-icon");
 const iconFile = $("icon-file");
+const firebaseFile = $("firebase-file");
 const loading = $("loading");
 
 let runs = [];
 let customIcon = null;
+let firebaseJson = null;
 const icons = {};
-const releases = []; // cache of GitHub releases
+const releases = [];
 
 const REPO_NAMES = {
   "zey-win/plinko":"plinko","zey-win/blackjack":"blackjack","zey-win/roulette":"roulette",
@@ -36,7 +39,6 @@ function parseTitle(title) {
   return {app:parts[0]||"Build", pkg:parts[1]||""};
 }
 
-// Load releases from GitHub API
 async function loadReleases() {
   try {
     const res = await fetch("https://api.github.com/repos/zey-win/ci-cd/releases?per_page=50");
@@ -45,21 +47,17 @@ async function loadReleases() {
     releases.length = 0;
     for(const r of (data||[])) {
       const tag = r.tag_name || "";
-      const assets = (r.assets||[]).map(a => ({
-        name: a.name, url: a.browser_download_url
-      }));
+      const assets = (r.assets||[]).map(a => ({ name: a.name, url: a.browser_download_url }));
       releases.push({ tag, name: r.name, assets });
     }
   } catch {}
 }
 
-// Find download URLs for a package name from releases
 function findDownloads(pkg) {
   if(!pkg) return {apk:null, aab:null};
   const p = pkg.toLowerCase();
   for(const rel of releases) {
     const tag = rel.tag.toLowerCase();
-    // tag format: android-apk-{pkg}-v{version}-{code}-{attempt}
     if(!tag.includes(p.replace(/\./g,"-"))) continue;
     const apk = rel.assets.find(a => a.name.endsWith(".apk") && a.name.toLowerCase().includes(p));
     const aab = rel.assets.find(a => a.name.endsWith(".aab") && a.name.toLowerCase().includes(p));
@@ -89,6 +87,15 @@ iconFile.addEventListener("change", e => {
   r.readAsDataURL(f);
 });
 
+firebaseFile.addEventListener("change", e => {
+  const f = e.target.files[0];
+  if(!f) return;
+  if(f.type !== "application/json") { alert("Only JSON"); return; }
+  const r = new FileReader();
+  r.onload = () => { firebaseJson = r.result; };
+  r.readAsDataURL(f);
+});
+
 async function loadIcon(repo) {
   if(icons[repo]) { gameIcon.src = icons[repo]; gameIcon.style.display = "block"; return; }
   try {
@@ -104,6 +111,7 @@ repoSelect.addEventListener("change", () => loadIcon(repoSelect.value));
 
 newBuildBtn.addEventListener("click", () => {
   customIcon = null;
+  firebaseJson = null;
   modal.classList.remove("hidden");
   loadIcon(repoSelect.value);
 });
@@ -114,11 +122,20 @@ form.addEventListener("submit", async e => {
   e.preventDefault();
   const fd = new FormData(form);
   const p = {
-    game_repository: fd.get("game_repository"),
-    app_name: fd.get("app_name"),
-    package_name: fd.get("package_name"),
-    build_format: fd.get("build_format"),
-    iconDataUrl: customIcon || ""
+    game_repository: fd.get("game_repository") || "zey-win/plinko",
+    game_ref: fd.get("game_ref") || "main",
+    app_name: fd.get("app_name") || "",
+    package_name: fd.get("package_name") || "",
+    build_format: fd.get("build_format") || "apk",
+    version_name: fd.get("version_name") || "",
+    version_code: fd.get("version_code") || "",
+    zeywin_api_key: fd.get("zeywin_api_key") || "",
+    admob_android_app_id: fd.get("admob_app_id") || "",
+    admob_android_banner_id: fd.get("admob_banner") || "",
+    admob_android_interstitial_id: fd.get("admob_interstitial") || "",
+    admob_android_rewarded_id: fd.get("admob_rewarded") || "",
+    iconDataUrl: customIcon || "",
+    firebaseJsonBase64: firebaseJson || ""
   };
   modal.classList.add("hidden");
   try {
@@ -135,7 +152,7 @@ async function loadBuilds() {
   try {
     const [runsRes] = await Promise.all([
       fetch(`${apiBase}/api/runs`),
-      loadReleases() // reload releases
+      loadReleases()
     ]);
     if(!runsRes.ok) { buildsContainer.innerHTML="<p>No builds</p>"; return; }
     const d = await runsRes.json();

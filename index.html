@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app">
 <meta name="builder-key" content="3e9b0ac6ecd43c716a5c80255f6936b163a3ceaa">
-<link rel="stylesheet" href="styles.css?v4">
+<link rel="stylesheet" href="styles.css?v5">
 </head>
 <body>
 <header>
@@ -27,7 +27,10 @@
 📷 Заменить иконку
 </label>
 </div>
-<label>Репозиторий <select name="game_repository" id="repo-select">
+
+<div class="form-row">
+<label>Игра
+<select name="game_repository" id="repo-select">
 <option value="zey-win/plinko">Plinko</option>
 <option value="zey-win/blackjack">Blackjack</option>
 <option value="zey-win/roulette">Roulette</option>
@@ -35,14 +38,38 @@
 <option value="zey-win/baccarat-tiger">Baccarat Tiger</option>
 <option value="zey-win/wheel-of-fortune">Wheel of Fortune</option>
 <option value="zey-win/Unstopable">Unstopable</option>
-</select></label>
-<label>Название <input name="app_name" required></label>
-<label>Package <input name="package_name" required></label>
+<option value="zey-win/SlotSpot">SlotSpot</option>
+</select>
+</label>
+<label>Ветка
+<input name="game_ref" id="branch-input" value="main" placeholder="main">
+</label>
+</div>
+
+<details id="advanced-section">
+<summary>Параметры сборки (опционально)</summary>
+<div class="params-grid">
+<label>Название приложения <input name="app_name" placeholder="Plinko Real Money"></label>
+<label>Package name <input name="package_name" placeholder="com.playsocialgames.plinkofun"></label>
 <label>Формат <select name="build_format">
 <option value="apk">APK</option>
 <option value="aab">AAB</option>
 <option value="apk_aab">APK+AAB</option>
 </select></label>
+<label>Версия <input name="version_name" placeholder="1"></label>
+<label>Version Code <input name="version_code" placeholder="1" type="number"></label>
+<label>ZeyWin API Key <input name="zeywin_api_key" placeholder="zw_..."></label>
+<label>AdMob App ID <input name="admob_app_id" placeholder="ca-app-pub-...~..."></label>
+<label>AdMob Banner <input name="admob_banner" placeholder="ca-app-pub-.../..."></label>
+<label>AdMob Interstitial <input name="admob_interstitial" placeholder="ca-app-pub-.../..."></label>
+<label>AdMob Rewarded <input name="admob_rewarded" placeholder="ca-app-pub-.../..."></label>
+<label class="file-label">google-services.json
+<input type="file" id="firebase-file" accept=".json" style="display:none">
+<span class="file-btn">📁 Выбрать файл</span>
+</label>
+</div>
+</details>
+
 <div class="modal-actions">
 <button type="button" id="modal-cancel">Отмена</button>
 <button type="submit">Запустить</button>

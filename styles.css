@@ -14,6 +14,14 @@ button{cursor:pointer;padding:8px 16px;border:none;border-radius:6px;font-size:1
 #modal form{background:#161b22;padding:24px;border-radius:8px;border:1px solid #30363d;width:400px;max-width:90vw}
 label{display:block;margin-bottom:12px;font-size:13px;color:#8b949e}
 label input,label select{display:block;width:100%;margin-top:4px;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:4px;color:#c9d1d9;font-size:14px}
+.form-row{display:flex;gap:12px;margin-bottom:12px}
+.form-row label{flex:1}
+details{margin-bottom:12px}
+details summary{cursor:pointer;color:#58a6ff;font-size:13px;padding:4px 0}
+.params-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.params-grid label{margin-bottom:0}
+.file-label{cursor:pointer;padding:8px;border:1px dashed #30363d;border-radius:4px;text-align:center}
+.file-label .file-btn{color:#58a6ff;font-size:13px}
 #icon-row{text-align:center;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
 .icon-upload{cursor:pointer;padding:4px 10px;background:#21262d;border-radius:4px;color:#58a6ff;font-size:12px;border:1px solid #30363d}
 .icon-upload:hover{background:#30363d}
