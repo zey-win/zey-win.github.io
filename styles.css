@@ -36,27 +36,26 @@ details summary{cursor:pointer;color:#58a6ff;font-size:13px;padding:4px 0}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .modal-actions button{padding:8px 20px}
 .modal-actions button[type=submit]{background:#238636;color:#fff}
-.build-card{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.build-card .right-col{display:flex;flex-direction:column;align-items:center;gap:6px}
-.card-icon{width:36px;height:36px;border-radius:6px;flex-shrink:0;object-fit:cover}
-.build-card .info{flex:1}
-.build-card .app-name{font-weight:600;color:#f0f6fc}
-.build-card .meta{font-size:12px;color:#8b949e;margin-top:2px}
-.build-card .status{padding:4px 10px;border-radius:12px;font-size:12px;white-space:nowrap}
+.build-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+.build-card .right-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:140px}
+.card-icon{width:64px;height:64px;border-radius:12px;flex-shrink:0;object-fit:cover}
+.build-card .info{flex:1;min-width:0}
+.build-card .app-name{font-weight:700;font-size:20px;color:#f0f6fc;margin-bottom:4px}
+.build-card .meta{font-size:14px;color:#8b949e;margin-top:2px}
+.build-card .status{padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
 .status-success{background:#23863620;color:#3fb950}
 .status-failure{background:#da363320;color:#f85149}
 .status-pending{background:#d2992220;color:#d29922}
+.version-line{font-size:12px;color:#8b949e}
 #builds-container,#active-container{min-height:60px}
 .spinner-overlay{position:fixed;top:24px;right:24px;width:24px;height:24px;pointer-events:none;z-index:10}
 .spinner-overlay .spinner{width:24px;height:24px;border:3px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.build-card .actions{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.build-card .actions a,.dl-btn,.del-btn,.log-btn{padding:4px 8px;border-radius:4px;font-size:12px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4}
-.dl-btn{background:#238636;color:#fff;min-width:48px;text-align:center}
+.build-card .btn-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.build-card .btn-group a,.dl-btn,.del-btn,.log-btn{padding:8px 14px;border-radius:10px;font-size:14px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4}
+.dl-btn{background:#238636;color:#fff;min-width:72px;text-align:center;font-weight:600}
 .dl-btn:hover{background:#2ea043}
-.del-btn{background:#da363320;color:#f85149;border:1px solid rgba(218,54,51,0.3);border-radius:12px;padding:4px 12px;font-weight:600;text-transform:lowercase}
+.del-btn{background:#da363320;color:#f85149;border:1px solid rgba(218,54,51,0.3);border-radius:999px;padding:8px 18px;font-weight:600;text-transform:lowercase}
 .del-btn:hover{background:#da363340}
-.log-btn{background:#21262d;color:#58a6ff}
+.log-btn{background:#21262d;color:#58a6ff;border-radius:10px}
 .log-btn:hover{background:#30363d}
-.build-card .actions a{background:#21262d;color:#58a6ff}
-.build-card .actions a:hover{background:#30363d}
