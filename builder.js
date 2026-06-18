@@ -230,4 +230,10 @@ async function preloadIcons() {
   }));
 }
 
+// Timer tick every second for active builds
+setInterval(() => {
+  const active = runs.filter(r => r.status !== "completed");
+  if (active.some(r => timers[r.id])) renderAll();
+}, 1000);
+
 (async () => { await preloadIcons(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
