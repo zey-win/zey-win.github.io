@@ -126,6 +126,7 @@ let runs = [];
 let customIcon = null;
 let firebaseJson = null;
 const icons = {};
+const runMeta = {}; // runId -> { game_ref, iconDataUrl }
 const releases = [];
 
 const REPO_NAMES = {
@@ -244,8 +245,13 @@ form.addEventListener("submit", async e => {
       iconCache.set(cacheKey, customIcon);
     }
     // Copy icon to icons[repo] for card display
-    if (iconCache.has(cacheKey)) icons[p.game_repository] = iconCache.get(cacheKey);
-    if (d.run) { runs = [d.run, ...runs]; renderAll(); } else loadBuilds();
+    if (d.run) {
+      // remember icon for this specific build
+      const iconForBuild = customIcon || iconCache.get(cacheKey) || null;
+      if (iconForBuild) runMeta[d.run.id] = iconForBuild;
+      runs = [d.run, ...runs];
+      renderAll();
+    } else loadBuilds();
   } catch (err) { alert("Error: " + err.message); }
 });
 
@@ -300,7 +306,7 @@ function card(r) {
   else if (repo === "zey-win/plinko" && appLower.includes("plinko") && !appLower.includes("falling") && !appLower.includes("real")) iconKey = "zey-win/plinko@app/plinko";
   else if (repo === "zey-win/plinko" && appLower.includes("falling")) iconKey = "zey-win/plinko@main";
   else iconKey = `${repo}@main`;
-  let iconUrl = iconCache.get(iconKey) || (icons[repo] || null);
+  let iconUrl = runMeta[r.id] || iconCache.get(iconKey) || (icons[repo] || null);
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
 
   let label, cls;
