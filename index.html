@@ -13,19 +13,12 @@
 <body>
 <header>
 <h1>ZeyWin CI/CD</h1>
+<div id="loading" class="spinner-inline" style="display:none"><div class="spinner"></div></div>
 <button id="new-build">+ Новая сборка</button>
 </header>
 
 <div id="modal" class="hidden">
 <form id="build-form">
-<div id="icon-row">
-<img id="game-icon" src="" alt="" style="width:64px;height:64px;border-radius:8px;display:none">
-<label class="icon-upload" id="icon-upload-label">
-<input type="file" id="icon-file" accept="image/png" style="display:none">
-📷 Заменить иконку
-</label>
-</div>
-
 <div class="form-row">
 <label>Игра
 <select name="game_repository" id="repo-select">
@@ -45,11 +38,22 @@
 </label>
 </div>
 
+<div id="icon-row" class="fade-in">
+<img id="game-icon" src="" alt="" style="width:64px;height:64px;border-radius:8px;display:none">
+<label class="icon-upload" id="icon-upload-label">
+<input type="file" id="icon-file" accept="image/png" style="display:none">
+📷 Заменить иконку
+</label>
+</div>
+
+<div id="name-fields" class="fade-in-delayed">
+<label>Название приложения <input name="app_name" placeholder="Plinko Real Money"></label>
+<label>Package name <input name="package_name" placeholder="com.playsocialgames.plinkofun"></label>
+</div>
+
 <details id="advanced-section">
 <summary>Параметры сборки (опционально)</summary>
 <div class="params-grid">
-<label>Название приложения <input name="app_name" placeholder="Plinko Real Money"></label>
-<label>Package name <input name="package_name" placeholder="com.playsocialgames.plinkofun"></label>
 <label>Формат <select name="build_format">
 <option value="apk">APK</option>
 <option value="aab">AAB</option>
@@ -75,8 +79,6 @@
 </div>
 </form>
 </div>
-
-<div id="loading" class="spinner-overlay" style="display:none"><div class="spinner"></div></div>
 
 <section>
 <div id="active-container"></div>

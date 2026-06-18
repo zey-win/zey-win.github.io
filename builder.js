@@ -177,7 +177,7 @@ form.addEventListener("submit", async e => {
 });
 
 async function loadBuilds() {
-  if(loading) loading.style.display = "flex";
+  if(loading) loading.style.display = "inline-flex";
   try {
     const [runsRes] = await Promise.all([
       fetch(`${apiBase}/api/runs`),
