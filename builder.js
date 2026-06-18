@@ -106,7 +106,7 @@ const DEFAULT_BRANCHES = [{ ref: "main", label: "main" }];
 function updateBranches() { const repo = repoSelect.value; const list = BRANCHES[repo] || DEFAULT_BRANCHES; branchSelect.innerHTML = list.map(b => `<option value="${b.ref}">${b.label}</option>`).join(""); loadIcon(repo, branchSelect.value); }
 
 let runs = [], customIcon = null, firebaseJson = null;
-const runMeta = {}, icons = {}, releases = [];
+const runMeta = {}, icons = {}, releases = [], timers = {};
 const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette", "zey-win/dragon-tiger": "dragon tiger", "zey-win/baccarat-tiger": "baccarat tiger", "zey-win/wheel-of-fortune": "wheel of fortune", "zey-win/Unstopable": "unstopable", "zey-win/SlotSpot": "slotspot" };
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
@@ -142,7 +142,14 @@ form.addEventListener("submit", async e => {
     const d = await res.json(); const cacheKey = `${p.game_repository}@${p.game_ref}`;
     if (customIcon) iconCache.set(cacheKey, customIcon);
     else { loadIcon(p.game_repository, p.game_ref).then(() => { const ico = iconCache.get(cacheKey); if (ico && d.run) { runMeta[d.run.id] = { icon: ico, ver: p.version_name || "", code: p.version_code || "" }; renderAll(); } }); }
-    if (d.run) { let iconForBuild = customIcon || iconCache.get(cacheKey) || null; if (!iconForBuild && iconLoadedDeferred) { try { await iconLoadedDeferred; } catch {} iconForBuild = iconCache.get(cacheKey) || null; } if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" }; runs = [d.run, ...runs]; renderAll(); } else loadBuilds();
+    if (d.run) {
+      let iconForBuild = customIcon || iconCache.get(cacheKey) || null;
+      if (!iconForBuild && iconLoadedDeferred) { try { await iconLoadedDeferred; } catch {} iconForBuild = iconCache.get(cacheKey) || null; }
+      if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
+      // start timer 23:00
+      timers[d.run.id] = { start: Date.now(), total: 23 * 60 * 1000 };
+      runs = [d.run, ...runs]; renderAll();
+    } else loadBuilds();
     iconLoadedDeferred = null;
   } catch (err) { alert("Error: " + err.message); }
 });
@@ -186,11 +193,20 @@ function card(r, idx) {
   let label, cls;
   if (concl === "success") { label = "✅ Готов"; cls = "status-success"; } else if (concl === "failure") { label = "Ошибка"; cls = "status-failure"; } else if (["waiting", "queued", "pending"].includes(st)) { label = "⏳ В очереди"; cls = "status-pending"; } else if (st === "completed") { label = "Ошибка"; cls = "status-failure"; } else { label = "🔄 " + st; cls = "status-pending"; }
 
-  const dlApk = findDownloads(pkg);
-  const actions = `<div class="actions"><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">❌</button>${concl === "success" ? `${dlApk.apk ? `<a class="dl-btn" href="${dlApk.apk}" download>APK</a>` : ""}${dlApk.aab ? `<a class="dl-btn" href="${dlApk.aab}" download>AAB</a>` : ""}` : `<a href="${esc(url)}" target="_blank" class="log-btn">Логи →</a>`}</div>`;
+  const actions = `<div class="actions"><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">❌</button>${concl === "success" ? `${downloads.apk ? `<a class="dl-btn" href="${downloads.apk}" download>APK</a>` : ""}${downloads.aab ? `<a class="dl-btn" href="${downloads.aab}" download>AAB</a>` : ""}` : `<a href="${esc(url)}" target="_blank" class="log-btn">Логи →</a>`}</div>`;
   const verStr = (meta && meta.ver) || String(r.runNumber || ""); const codeStr = (meta && meta.code) || String(r.runAttempt || "1"); const versionInfo = verStr ? `| Version ${verStr} (code: ${codeStr})` : "";
+  // compute timer display for active builds
+  let timerHtml = "";
+  if (timers[r.id]) {
+    const elapsed = Date.now() - timers[r.id].start;
+    const left = Math.max(0, timers[r.id].total - elapsed);
+    const m = Math.floor(left / 60000);
+    const s = Math.floor((left % 60000) / 1000);
+    if (left > 0) timerHtml = `<span class="timer">⏱ ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}</span>`;
+    else delete timers[r.id];
+  }
   const bgStyle = idx !== undefined && idx % 2 === 0 ? 'style="background:#1a202c"' : 'style="background:#161b22"';
-  return `<div class="build-card" ${bgStyle}>${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
+  return `<div class="build-card" ${bgStyle}>${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
 }
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
