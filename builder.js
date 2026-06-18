@@ -17,41 +17,48 @@ let runs = [];
 let customIcon = null;
 const icons = {};
 
-// Game repo mapping for icon lookup from displayTitle
-const GAMES = {
-  plinko: "zey-win/plinko",
-  blackjack: "zey-win/blackjack",
-  roulette: "zey-win/roulette",
-  dragontiger: "zey-win/dragon-tiger",
-  "dragon tiger": "zey-win/dragon-tiger",
-  baccarattiger: "zey-win/baccarat-tiger",
-  "baccarat tiger": "zey-win/baccarat-tiger",
-  wheeloffortune: "zey-win/wheel-of-fortune",
-  "wheel of fortune": "zey-win/wheel-of-fortune",
-  unstopable: "zey-win/Unstopable",
-  slotspot: "zey-win/SlotSpot",
-  test: "zey-win/plinko",
-  com: "zey-win/plinko"
+// Game repo mapping for icon lookup
+const REPO_NAMES = {
+  "zey-win/plinko": "plinko",
+  "zey-win/blackjack": "blackjack",
+  "zey-win/roulette": "roulette",
+  "zey-win/dragon-tiger": "dragon tiger",
+  "zey-win/baccarat-tiger": "baccarat tiger",
+  "zey-win/wheel-of-fortune": "wheel of fortune",
+  "zey-win/Unstopable": "unstopable",
+  "zey-win/SlotSpot": "slotspot"
 };
 
 function repoFromTitle(t) {
   const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ");
-  for (const [key, repo] of Object.entries(GAMES)) {
-    if (s.includes(key)) return repo;
+  for (const [repo, name] of Object.entries(REPO_NAMES)) {
+    if (s.includes(name)) return repo;
   }
   return null;
 }
 
-// Preload all icons on start
+// Parse displayTitle: "Android: Plinko Real Money / com.xxx / apk / manual"
+function parseDisplayTitle(title) {
+  if (!title) return { app: "Build", pkg: "" };
+  // Remove "Android: " prefix
+  let s = title.replace(/^Android:\s*/i, "");
+  // Split by " / "
+  const parts = s.split(" / ").map(p => p.trim());
+  const app = parts[0] || "Build";
+  const pkg = parts[1] || "";
+  return { app, pkg };
+}
+
+// Preload all icons
 async function preloadIcons() {
-  const repos = [...new Set(Object.values(GAMES))];
+  const repos = Object.keys(REPO_NAMES);
   await Promise.all(repos.map(async repo => {
     try {
       const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=main`, { headers: op() });
       if (!res.ok) return;
       const d = await res.json();
       if (d.ok && d.icon && d.icon.dataUrl) icons[repo] = d.icon.dataUrl;
-    } catch(e) { /* ignore */ }
+    } catch {}
   }));
 }
 
@@ -88,13 +95,27 @@ modal.addEventListener("click", e => { if (e.target === modal) modal.classList.a
 form.addEventListener("submit", async e => {
   e.preventDefault();
   const fd = new FormData(form);
-  const p = { game_repository: fd.get("game_repository"), app_name: fd.get("app_name"), package_name: fd.get("package_name"), build_format: fd.get("build_format"), iconDataUrl: customIcon || "" };
+  const p = {
+    game_repository: fd.get("game_repository"),
+    app_name: fd.get("app_name"),
+    package_name: fd.get("package_name"),
+    build_format: fd.get("build_format"),
+    iconDataUrl: customIcon || ""
+  };
   modal.classList.add("hidden");
   try {
     const res = await fetch(`${apiBase}/api/build`, { method: "POST", headers: op(), body: JSON.stringify(p) });
     if (!res.ok) { alert("Error: " + await res.text().catch(() => "")); return; }
     const d = await res.json();
-    if (d.run) { runs = [d.run, ...runs]; renderAll(); } else loadBuilds();
+    if (d.run) {
+      // If custom icon was uploaded, set it for this run
+      if (customIcon) {
+        const repo = p.game_repository;
+        icons[repo] = customIcon;
+      }
+      runs = [d.run, ...runs];
+      renderAll();
+    } else loadBuilds();
   } catch (err) { alert("Error: " + err.message); }
 });
 
@@ -114,25 +135,26 @@ function renderAll() {
   const active = runs.filter(r => r.status !== "completed");
   const done = runs.filter(r => r.status === "completed" && r.conclusion === "success");
   const fail = runs.filter(r => r.status === "completed" && r.conclusion !== "success");
-  activeContainer.innerHTML = active.length ? active.map(r => card(r)).join("") : "<p>No active builds</p>";
-  buildsContainer.innerHTML = done.length || fail.length ? [...done, ...fail].slice(0, 30).map(r => card(r)).join("") : "<p>No completed builds</p>";
+  activeContainer.innerHTML = active.length ? active.map(r => card(r)).join("") : "<p>Нет активных сборок</p>";
+  buildsContainer.innerHTML = done.length || fail.length ? [...done, ...fail].slice(0, 30).map(r => card(r)).join("") : "<p>Нет завершённых сборок</p>";
 }
 
 function card(r) {
-  const name = r.displayTitle || r.name || "Build";
+  const raw = r.displayTitle || r.name || "";
+  const { app, pkg } = parseDisplayTitle(raw);
   const concl = r.conclusion || "";
   const st = r.status || "unknown";
   const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
   const url = r.htmlUrl || "#";
-  const repo = repoFromTitle(name);
+  const repo = repoFromTitle(raw);
   const iconUrl = repo && icons[repo] ? icons[repo] : null;
   let label, cls;
-  if (concl === "success") { label = "Ready"; cls = "status-success"; }
-  else if (concl === "failure") { label = "Error"; cls = "status-failure"; }
-  else if (["waiting","queued","pending"].includes(st)) { label = "Pending"; cls = "status-pending"; }
-  else if (st === "completed") { label = "Error"; cls = "status-failure"; }
-  else { label = st; cls = "status-pending"; }
-  return `<div class="build-card">${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(name)}</div><div class="meta">${esc(created)}</div></div><div class="actions"><a href="${esc(url)}" target="_blank">Logs</a></div><span class="status ${cls}">${label}</span></div>`;
+  if (concl === "success") { label = "✅ Готов"; cls = "status-success"; }
+  else if (concl === "failure") { label = "❌ Ошибка"; cls = "status-failure"; }
+  else if (["waiting","queued","pending"].includes(st)) { label = "⏳ В очереди"; cls = "status-pending"; }
+  else if (st === "completed") { label = "❌ Ошибка"; cls = "status-failure"; }
+  else { label = "🔄 " + st; cls = "status-pending"; }
+  return `<div class="build-card">${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div></div><div class="actions"><a href="${esc(url)}" target="_blank">Логи →</a></div><span class="status ${cls}">${label}</span></div>`;
 }
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
