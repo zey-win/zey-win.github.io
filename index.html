@@ -39,7 +39,10 @@
 </div>
 
 <div id="icon-row" class="fade-in">
+<div id="icon-wrapper" style="width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center">
 <img id="game-icon" src="" alt="" style="width:64px;height:64px;border-radius:8px;display:none">
+<div id="icon-spinner" class="icon-spinner" style="display:none"></div>
+</div>
 <label class="icon-upload" id="icon-upload-label">
 <input type="file" id="icon-file" accept="image/png" style="display:none">
 📷 Заменить иконку
@@ -47,7 +50,10 @@
 </div>
 
 <div id="name-fields" class="fade-in-delayed">
-<label>Название приложения <input name="app_name" placeholder="Plinko Real Money"></label>
+<div style="display:flex;gap:4px;align-items:flex-end">
+<label style="flex:1">Название приложения <input name="app_name" placeholder="Plinko Real Money"></label>
+<button type="button" id="z-btn" title="Заполнить из репозитория" style="height:36px;padding:4px 10px;background:#21262d;color:#58a6ff;border-radius:4px;border:1px solid #30363d;font-weight:600">Z</button>
+</div>
 <label>Package name <input name="package_name" placeholder="com.playsocialgames.plinkofun"></label>
 </div>
 

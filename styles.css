@@ -27,6 +27,7 @@ details summary{cursor:pointer;color:#58a6ff;font-size:13px;padding:4px 0}
 .fade-in-delayed{animation:fadeSlideUp .5s ease-out .6s both}
 .spinner-inline{display:inline-flex;align-items:center;width:20px;height:20px}
 .spinner-inline .spinner{width:18px;height:18px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
+.icon-spinner{width:30px;height:30px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
 #icon-row{text-align:center;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
 .icon-upload{cursor:pointer;padding:4px 10px;background:#21262d;border-radius:4px;color:#58a6ff;font-size:12px;border:1px solid #30363d}
 .icon-upload:hover{background:#30363d}

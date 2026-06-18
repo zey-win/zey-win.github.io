@@ -11,9 +11,84 @@ const cancelBtn = $("modal-cancel");
 const repoSelect = $("repo-select");
 const branchSelect = $("branch-select");
 const gameIcon = $("game-icon");
+const iconSpinner = $("icon-spinner");
 const iconFile = $("icon-file");
 const firebaseFile = $("firebase-file");
 const loading = $("loading");
+const zBtn = $("z-btn");
+
+const iconCache = new Map(); // per-branch icon cache (должен быть перед loadIcon)
+const REPO_DEFAULTS = {
+  "zey-win/plinko": {
+    app_name: "Plinko Real Money",
+    package_name: "com.playsocialgames.plinkofun",
+    admob_android_app_id: "ca-app-pub-1585565865476548~5854522209",
+    admob_android_banner_id: "ca-app-pub-1585565865476548/2893595529",
+    admob_android_interstitial_id: "ca-app-pub-1585565865476548/2521834122",
+    admob_android_rewarded_id: "ca-app-pub-1585565865476548/7091315351",
+    zeywin_api_key: "zw_7b07dc24806408f6e655dcf0422e15c5e028d40d440b3e1a",
+    firebase_url: "https://raw.githubusercontent.com/zey-win/plinko/main/Assets/Plugins/Android/google-services.json"
+  }
+};
+// Utility to set spinner on icon
+function showIconSpinner() {
+  gameIcon.style.display = "none";
+  iconSpinner.style.display = "block";
+}
+function hideIconSpinner() {
+  iconSpinner.style.display = "none";
+}
+function setIcon(src) {
+  if (src) { gameIcon.src = src; gameIcon.style.display = "block"; }
+  else gameIcon.style.display = "none";
+  hideIconSpinner();
+}
+
+async function loadIcon(repo, ref) {
+  const refStr = ref || "main";
+  const cacheKey = `${repo}@${refStr}`;
+  const cached = iconCache.get(cacheKey);
+  if (cached) { setIcon(cached); return; }
+  showIconSpinner();
+  try {
+    const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(refStr)}`, { headers: op() });
+    if (!res.ok) { setIcon(null); return; }
+    const d = await res.json();
+    if (d.ok && d.icon?.dataUrl) {
+      iconCache.set(cacheKey, d.icon.dataUrl);
+      setIcon(d.icon.dataUrl);
+    } else setIcon(null);
+  } catch { setIcon(null); }
+}
+
+// Z button: fill form with repo defaults + fetch firebase
+zBtn.addEventListener("click", async () => {
+  const repo = repoSelect.value;
+  const def = REPO_DEFAULTS[repo];
+  if (!def) { alert("Нет данных для этого репозитория. Данные берутся из Unity PlayerSettings репозитория."); return; }
+  document.querySelector('[name="app_name"]').value = def.app_name || "";
+  document.querySelector('[name="package_name"]').value = def.package_name || "";
+  document.querySelector('[name="zeywin_api_key"]').value = def.zeywin_api_key || "";
+  document.querySelector('[name="admob_app_id"]').value = def.admob_android_app_id || "";
+  document.querySelector('[name="admob_banner"]').value = def.admob_android_banner_id || "";
+  document.querySelector('[name="admob_interstitial"]').value = def.admob_android_interstitial_id || "";
+  document.querySelector('[name="admob_rewarded"]').value = def.admob_android_rewarded_id || "";
+  // Try to load firebase JSON
+  if (def.firebase_url) {
+    try {
+      const res = await fetch(def.firebase_url);
+      if (res.ok) {
+        const text = await res.text();
+        const base64 = btoa(text);
+        firebaseJson = `data:application/json;base64,${base64}`;
+        alert("google-services.json загружен из репозитория");
+      }
+    } catch {}
+  }
+});
+
+// Hide old loadIcon, replace with new one above
+// Remove old loadIcon function below
 
 const BRANCHES = {
   "zey-win/plinko": [
@@ -36,7 +111,6 @@ let runs = [];
 let customIcon = null;
 let firebaseJson = null;
 const icons = {};
-const iconCache = new Map(); // per-branch icon cache
 const releases = [];
 
 const REPO_NAMES = {
@@ -113,24 +187,6 @@ firebaseFile.addEventListener("change", e => {
   r.onload = () => { firebaseJson = r.result; };
   r.readAsDataURL(f);
 });
-
-async function loadIcon(repo, ref) {
-  const refStr = ref || "main";
-  const cacheKey = `${repo}@${refStr}`;
-  const cached = iconCache ? iconCache.get(cacheKey) : icons[repo];
-  if(cached) { gameIcon.src = cached; gameIcon.style.display = "block"; return; }
-  try {
-    const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(refStr)}`, { headers: op() });
-    if(!res.ok) { gameIcon.style.display = "none"; return; }
-    const d = await res.json();
-    if(d.ok && d.icon?.dataUrl) {
-      if(iconCache) iconCache.set(cacheKey, d.icon.dataUrl);
-      else icons[repo] = d.icon.dataUrl;
-      gameIcon.src = d.icon.dataUrl;
-      gameIcon.style.display = "block";
-    } else gameIcon.style.display = "none";
-  } catch { gameIcon.style.display = "none"; }
-}
 
 repoSelect.addEventListener("change", updateBranches);
 branchSelect.addEventListener("change", () => loadIcon(repoSelect.value, branchSelect.value));
