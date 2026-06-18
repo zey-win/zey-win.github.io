@@ -292,7 +292,15 @@ function card(r) {
   const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
   const url = r.htmlUrl || "#";
   const repo = repoFromTitle(raw);
-  const iconUrl = repo && icons[repo] ? icons[repo] : null;
+  // Try to match app name to a branch for icon lookup
+  const appLower = (app || "").toLowerCase();
+  let iconKey = null;
+  if (repo === "zey-win/plinko" && appLower.includes("real money")) iconKey = "zey-win/plinko@app/plinko-real-money";
+  else if (repo === "zey-win/plinko" && appLower.includes("real game")) iconKey = "zey-win/plinko@app/plinko-real-game";
+  else if (repo === "zey-win/plinko" && appLower.includes("plinko") && !appLower.includes("falling") && !appLower.includes("real")) iconKey = "zey-win/plinko@app/plinko";
+  else if (repo === "zey-win/plinko" && appLower.includes("falling")) iconKey = "zey-win/plinko@main";
+  else iconKey = `${repo}@main`;
+  let iconUrl = iconCache.get(iconKey) || (icons[repo] || null);
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
 
   let label, cls;
