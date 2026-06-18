@@ -177,11 +177,14 @@ firebaseFile.addEventListener("change", e => {
 repoSelect.addEventListener("change", updateBranches);
 branchSelect.addEventListener("change", () => loadIcon(repoSelect.value, branchSelect.value));
 
+let iconLoadedDeferred = null;
 newBuildBtn.addEventListener("click", () => {
   customIcon = null;
   firebaseJson = null;
   modal.classList.remove("hidden");
   updateBranches();
+  // ensure icon loads before submit
+  iconLoadedDeferred = loadIcon(repoSelect.value, branchSelect.value);
 });
 cancelBtn.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
@@ -224,11 +227,19 @@ form.addEventListener("submit", async e => {
       });
     }
     if (d.run) {
-      const iconForBuild = customIcon || iconCache.get(cacheKey) || null;
+      // try to get icon immediately from cache (if custom or preloaded)
+      let iconForBuild = customIcon || iconCache.get(cacheKey) || null;
+      // if no icon yet, wait for deferred load
+      if (!iconForBuild && iconLoadedDeferred) {
+        try { await iconLoadedDeferred; } catch {}
+        iconForBuild = iconCache.get(cacheKey) || null;
+      }
       if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
       runs = [d.run, ...runs];
       renderAll();
     } else loadBuilds();
+    // cleanup
+    iconLoadedDeferred = null;
   } catch (err) { alert("Error: " + err.message); }
 });
 
