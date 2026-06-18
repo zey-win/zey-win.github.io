@@ -241,6 +241,33 @@ function card(r, idx) {
   return `<div class="build-card${progressClass}" ${bgStyle}>${iconBlock}${infoBlock}${rightBlock}</div>`;
 }
 
+const clipboardExceptedInputs = new Set(["app_name"]);
+function setupClipboardInput(el) {
+  if (!el || clipboardExceptedInputs.has(el.name)) return;
+  let pasted = false;
+  el.addEventListener("focus", () => {
+    if (pasted) return;
+    const text = (navigator.clipboard && window.isSecureContext) ? null : null;
+    const fallback = () => {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = "";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+      } catch {}
+    };
+    void fallback();
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.readText().then(t => { if (t && !el.value) { el.value = t; pasted = true; } }).catch(() => {});
+    } else {
+      pasted = true;
+    }
+  });
+  el.addEventListener("blur", () => { pasted = false; });
+}
+document.querySelectorAll("#build-form input").forEach(setupClipboardInput);
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
 async function preloadIcons() {
