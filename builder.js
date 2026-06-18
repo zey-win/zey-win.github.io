@@ -33,15 +33,16 @@ function showIconSpinner() { gameIcon.style.display = "none"; iconSpinner.style.
 function hideIconSpinner() { iconSpinner.style.display = "none"; }
 function setIcon(src) { if (src) { gameIcon.src = src; gameIcon.style.display = "block"; } else gameIcon.style.display = "none"; hideIconSpinner(); }
 
-async function loadIcon(repo, ref) {
-  const refStr = ref || "main"; const cacheKey = `${repo}@${refStr}`;
-  const cached = iconCache.get(cacheKey); if (cached) { setIcon(cached); return; }
+async function getIconDataUrl(repo, ref) {
+  const refStr = ref || "main"; const key = `${repo}@${refStr}`;
+  const cached = iconCache.get(key); if (cached) { setIcon(cached); return cached; }
   showIconSpinner();
   try {
     const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(refStr)}`, { headers: op() });
     if (!res.ok) { setIcon(null); return null; }
     const d = await res.json();
-    if (d.ok && d.icon?.dataUrl) { iconCache.set(cacheKey, d.icon.dataUrl); setIcon(d.icon.dataUrl); return d.icon.dataUrl; } else { setIcon(null); return null; }
+    if (d.ok && d.icon?.dataUrl) { iconCache.set(key, d.icon.dataUrl); setIcon(d.icon.dataUrl); return d.icon.dataUrl; }
+    setIcon(null); return null;
   } catch { setIcon(null); return null; }
 }
 
@@ -85,7 +86,7 @@ function startSparks(cardEl, runId) {
     }
     particleIntervals[runId] = requestAnimationFrame(anim);
   }
-  particleIntervals[runId] = requestAnimationFrame(anim);
+  anim();
 }
 function stopSparks(runId) { if (particleIntervals[runId]) { cancelAnimationFrame(particleIntervals[runId]); delete particleIntervals[runId]; } }
 
@@ -102,10 +103,12 @@ zBtn.addEventListener("click", async () => {
 
 const BRANCHES = { "zey-win/plinko": [{ ref: "main", label: "Plinko Falling" }, { ref: "app/plinko", label: "Plinko" }, { ref: "app/plinko-real-game", label: "Plinko Real Game" }, { ref: "app/plinko-real-money", label: "Plinko Real Money" }] };
 const DEFAULT_BRANCHES = [{ ref: "main", label: "main" }];
-function updateBranches() { const repo = repoSelect.value; const list = BRANCHES[repo] || DEFAULT_BRANCHES; branchSelect.innerHTML = list.map(b => `<option value="${b.ref}">${b.label}</option>`).join(""); loadIcon(repo, branchSelect.value); }
+function updateBranches() { const repo = repoSelect.value; const list = BRANCHES[repo] || DEFAULT_BRANCHES; branchSelect.innerHTML = list.map(b => `<option value="${b.ref}">${b.label}</option>`).join(""); getIconDataUrl(repo, branchSelect.value); }
 
-let runs = [], customIcon = null, firebaseJson = null;
+let runs = [], firebaseJson = null;
 const runMeta = {}, icons = {}, releases = [], timers = {};
+let currentIconDataUrl = null; // the icon dataUrl currently shown in modal
+
 const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette", "zey-win/dragon-tiger": "dragon tiger", "zey-win/baccarat-tiger": "baccarat tiger", "zey-win/wheel-of-fortune": "wheel of fortune", "zey-win/Unstopable": "unstopable", "zey-win/SlotSpot": "slotspot" };
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
@@ -120,36 +123,46 @@ function findDownloads(pkg) {
   return { apk: null, aab: null };
 }
 
-iconFile.addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; if (f.type !== "image/png") { alert("Only PNG"); return; } const r = new FileReader(); r.onload = () => { customIcon = r.result; gameIcon.src = r.result; gameIcon.style.display = "block"; }; r.readAsDataURL(f); });
+iconFile.addEventListener("change", e => {
+  const f = e.target.files[0]; if (!f) return; if (f.type !== "image/png") { alert("Only PNG"); return; }
+  const r = new FileReader(); r.onload = () => { currentIconDataUrl = r.result; gameIcon.src = r.result; gameIcon.style.display = "block"; }; r.readAsDataURL(f);
+});
 firebaseFile.addEventListener("change", e => { const f = e.target.files[0]; if (!f) return; if (f.type !== "application/json") { alert("Only JSON"); return; } const r = new FileReader(); r.onload = () => { firebaseJson = r.result; }; r.readAsDataURL(f); });
 
-repoSelect.addEventListener("change", updateBranches);
-branchSelect.addEventListener("change", () => loadIcon(repoSelect.value, branchSelect.value));
+repoSelect.addEventListener("change", () => { updateBranches(); });
+branchSelect.addEventListener("change", () => { getIconDataUrl(repoSelect.value, branchSelect.value).then(url => { if (url) currentIconDataUrl = url; }); });
 
 let iconLoadedDeferred = null;
-newBuildBtn.addEventListener("click", () => { customIcon = null; firebaseJson = null; modal.classList.remove("hidden"); updateBranches(); iconLoadedDeferred = loadIcon(repoSelect.value, branchSelect.value); });
+newBuildBtn.addEventListener("click", () => {
+  currentIconDataUrl = null; firebaseJson = null;
+  modal.classList.remove("hidden"); updateBranches();
+  iconLoadedDeferred = getIconDataUrl(repoSelect.value, branchSelect.value).then(url => { if (url) currentIconDataUrl = url; });
+});
 cancelBtn.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", e => { if (e.target === modal) modal.classList.add("hidden"); });
 
 form.addEventListener("submit", async e => {
   e.preventDefault(); const fd = new FormData(form);
-  const cacheKey = `${fd.get("game_repository") || "zey-win/plinko"}@${fd.get("game_ref") || "main"}`;
-  // If no custom icon, wait for API-loaded icon and use it
-  if (!customIcon) {
-    if (iconLoadedDeferred) { try { await iconLoadedDeferred; } catch {} }
-    const cachedIcon = iconCache.get(cacheKey);
-    if (cachedIcon) customIcon = cachedIcon;
+  // Ensure currentIconDataUrl is set from cache or API
+  if (!currentIconDataUrl) {
+    const key = `${fd.get("game_repository") || "zey-win/plinko"}@${fd.get("game_ref") || "main"}`;
+    currentIconDataUrl = iconCache.get(key) || null;
   }
-  const iconData = customIcon || "";
+  // If still no icon, try fetching
+  if (!currentIconDataUrl && iconLoadedDeferred) {
+    try { const url = await iconLoadedDeferred; if (url) currentIconDataUrl = url; } catch {}
+  }
+  const iconData = currentIconDataUrl || "";
   const p = { game_repository: fd.get("game_repository") || "zey-win/plinko", game_ref: fd.get("game_ref") || "main", app_name: fd.get("app_name") || "", package_name: fd.get("package_name") || "", build_format: fd.get("build_format") || "apk", version_name: fd.get("version_name") || "", version_code: fd.get("version_code") || "", zeywin_api_key: fd.get("zeywin_api_key") || "", admob_android_app_id: fd.get("admob_app_id") || "", admob_android_banner_id: fd.get("admob_banner") || "", admob_android_interstitial_id: fd.get("admob_interstitial") || "", admob_android_rewarded_id: fd.get("admob_rewarded") || "", iconDataUrl: iconData, firebaseJsonBase64: firebaseJson || "" };
   modal.classList.add("hidden");
   try {
     const res = await fetch(`${apiBase}/api/build`, { method: "POST", headers: op(), body: JSON.stringify(p) });
     if (!res.ok) { alert("Error: " + await res.text().catch(() => "")); return; }
     const d = await res.json();
-    if (customIcon) iconCache.set(cacheKey, customIcon);
+    const cacheKey = `${p.game_repository}@${p.game_ref}`;
+    if (currentIconDataUrl) iconCache.set(cacheKey, currentIconDataUrl);
     if (d.run) {
-      const iconForBuild = customIcon || iconCache.get(cacheKey) || null;
+      const iconForBuild = currentIconDataUrl || iconCache.get(cacheKey) || null;
       if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
       timers[d.run.id] = { start: Date.now(), total: 23 * 60 * 1000 };
       runs = [d.run, ...runs]; renderAll();
