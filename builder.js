@@ -222,6 +222,7 @@ let runs = [];
 let customIcon = null;
 let firebaseJson = null;
 const runMeta = {};
+const icons = {}; // preloaded icons per repo
 const releases = [];
 let prevRunStatuses = {}; // track status changes for sounds
 
@@ -406,6 +407,7 @@ function card(r, idx) {
   let iconUrl = null;
   if (meta && meta.icon) iconUrl = meta.icon;
   else if (iconKey) iconUrl = iconCache.get(iconKey);
+  if (!iconUrl && repo) iconUrl = icons[repo] || null;
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
 
   let label, cls;
@@ -434,7 +436,24 @@ function card(r, idx) {
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
+// Preload icons for all repos on start
+async function preloadIcons() {
+  const repos = Object.keys(REPO_NAMES);
+  await Promise.all(repos.map(async repo => {
+    try {
+      const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=main`, { headers: op() });
+      if (!res.ok) return;
+      const d = await res.json();
+      if (d.ok && d.icon && d.icon.dataUrl) {
+        iconCache.set(`${repo}@main`, d.icon.dataUrl);
+        icons[repo] = d.icon.dataUrl;
+      }
+    } catch {}
+  }));
+}
+
 (async () => {
+  await preloadIcons();
   updateBranches(); loadBuilds();
   setInterval(loadBuilds, 15000);
 })();
