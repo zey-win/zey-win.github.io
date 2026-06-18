@@ -13,7 +13,6 @@
 <body>
 <header>
 <h1>ZeyWin CI/CD</h1>
-<p>Сборка APK/AAB через GitHub Actions</p>
 <button id="new-build">+ Новая сборка</button>
 </header>
 
@@ -77,15 +76,13 @@
 </form>
 </div>
 
-<div id="loading" class="spinner" style="display:none">Загрузка...</div>
+<div id="loading" class="spinner-overlay" style="display:none"><div class="spinner"></div></div>
 
 <section>
-<h2>Активные сборки</h2>
 <div id="active-container"></div>
 </section>
 
 <section>
-<h2>Готовые сборки</h2>
 <div id="builds-container"></div>
 </section>
 

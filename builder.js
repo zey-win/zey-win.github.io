@@ -148,7 +148,7 @@ form.addEventListener("submit", async e => {
 });
 
 async function loadBuilds() {
-  if(loading) loading.style.display = "block";
+  if(loading) loading.style.display = "flex";
   try {
     const [runsRes] = await Promise.all([
       fetch(`${apiBase}/api/runs`),
@@ -178,8 +178,8 @@ function renderAll() {
   const active = runs.filter(r => r.status !== "completed");
   const done = runs.filter(r => r.status === "completed" && r.conclusion === "success");
   const fail = runs.filter(r => r.status === "completed" && r.conclusion !== "success");
-  activeContainer.innerHTML = active.length ? active.map(r => card(r)).join("") : "<p>Нет активных сборок</p>";
-  buildsContainer.innerHTML = done.length || fail.length ? [...done, ...fail].slice(0,30).map(r => card(r)).join("") : "<p>Нет завершённых сборок</p>";
+  activeContainer.innerHTML = active.length ? active.map(r => card(r)).join("") : "";
+  buildsContainer.innerHTML = done.length || fail.length ? [...done, ...fail].slice(0,30).map(r => card(r)).join("") : "";
 }
 
 function card(r) {
