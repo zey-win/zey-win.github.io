@@ -72,6 +72,8 @@ async function loadIcon(repo, ref) {
 zBtn.addEventListener("click", async () => {
   const repo = repoSelect.value;
   const def = getDef(repo);
+  const fbStatus = document.getElementById("firebase-status");
+  const fbBtn = document.getElementById("firebase-btn");
   document.querySelector('[name="app_name"]').value = def.app_name || "";
   document.querySelector('[name="package_name"]').value = def.package_name || "";
   document.querySelector('[name="zeywin_api_key"]').value = def.zeywin_api_key || "";
@@ -81,15 +83,21 @@ zBtn.addEventListener("click", async () => {
   document.querySelector('[name="admob_rewarded"]').value = def.admob_android_rewarded_id || "";
   // Try to load firebase JSON
   if (def.firebase_url) {
+    if (fbStatus) { fbStatus.textContent = "⏳ загрузка..."; fbStatus.style.display = "inline"; }
     try {
       const res = await fetch(def.firebase_url);
       if (res.ok) {
         const text = await res.text();
         const base64 = btoa(text);
         firebaseJson = `data:application/json;base64,${base64}`;
-        alert("google-services.json загружен из репозитория");
+        if (fbStatus) { fbStatus.textContent = "✅ загружен"; }
+        if (fbBtn) { fbBtn.textContent = "📁 Заменить файл"; }
+      } else {
+        if (fbStatus) { fbStatus.textContent = "❌ не найден"; fbStatus.style.color = "#f85149"; }
       }
-    } catch {}
+    } catch {
+      if (fbStatus) { fbStatus.textContent = "❌ ошибка"; fbStatus.style.color = "#f85149"; }
+    }
   }
 });
 
