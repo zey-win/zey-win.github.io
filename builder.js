@@ -1,4 +1,6 @@
 const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.replace(/\/$/, "") || "https://zeywin-android-builder-api.vercel.app";
+const operatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
+const operatorHeaders = () => operatorKey ? { "Content-Type": "application/json", "x-builder-key": operatorKey } : { "Content-Type": "application/json" };
 const buildsContainer = document.getElementById("builds-container");
 const activeContainer = document.getElementById("active-container");
 const modal = document.getElementById("modal");
@@ -25,7 +27,7 @@ form.addEventListener("submit", async e => {
   try {
     const res = await fetch(`${apiBase}/api/build`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: operatorHeaders(),
       body: JSON.stringify(payload)
     });
     if (!res.ok) {
