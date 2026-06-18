@@ -212,4 +212,4 @@ async function preloadIcons() {
 
 setInterval(() => { const active = runs.filter(r => r.status !== "completed"); if (active.some(r => timers[r.id])) renderAll(); }, 50);
 
-(async () => { await preloadIcons(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
+(async () => { await preloadIcons(); await loadReleases(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
