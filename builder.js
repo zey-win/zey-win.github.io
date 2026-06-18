@@ -307,7 +307,7 @@ function card(r) {
   else if (repo === "zey-win/plinko" && appLower.includes("falling")) iconKey = "zey-win/plinko@main";
   else iconKey = `${repo}@main`;
   const meta = runMeta[r.id] || {};
-  let iconUrl = meta.icon || (typeof runMeta[r.id] === 'string' ? runMeta[r.id] : null) || iconCache.get(iconKey) || (icons[repo] || null);
+  let iconUrl = meta.icon || (typeof runMeta[r.id] === 'string' ? runMeta[r.id] : null);
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
 
   let label, cls;
