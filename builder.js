@@ -17,12 +17,11 @@ const firebaseFile = $("firebase-file");
 const loading = $("loading");
 const zBtn = $("z-btn");
 
-const iconCache = new Map(); // per-branch icon cache (должен быть перед loadIcon)
+const iconCache = new Map();
 const REPO_DEFAULTS = {};
 function getDef(repo) { return REPO_DEFAULTS[repo] || {}; }
 REPO_DEFAULTS["zey-win/plinko"] = {
-  app_name: "Plinko Real Money",
-  package_name: "com.playsocialgames.plinkofun",
+  app_name: "Plinko Real Money", package_name: "com.playsocialgames.plinkofun",
   admob_android_app_id: "ca-app-pub-1585565865476548~5854522209",
   admob_android_banner_id: "ca-app-pub-1585565865476548/2893595529",
   admob_android_interstitial_id: "ca-app-pub-1585565865476548/2521834122",
@@ -37,19 +36,10 @@ REPO_DEFAULTS["zey-win/baccarat-tiger"] = { app_name: "Baccarat", package_name: 
 REPO_DEFAULTS["zey-win/wheel-of-fortune"] = { app_name: "Wheel of Fortune", package_name: "com.playmaxsolutions.wheeloffortune" };
 REPO_DEFAULTS["zey-win/Unstopable"] = { app_name: "Unstopable: Real Money", package_name: "com.playmaxsolutions.unstopable" };
 REPO_DEFAULTS["zey-win/SlotSpot"] = { app_name: "SlotSpot", package_name: "com.playmaxsolutions.slotspot" };
-// Utility to set spinner on icon
-function showIconSpinner() {
-  gameIcon.style.display = "none";
-  iconSpinner.style.display = "block";
-}
-function hideIconSpinner() {
-  iconSpinner.style.display = "none";
-}
-function setIcon(src) {
-  if (src) { gameIcon.src = src; gameIcon.style.display = "block"; }
-  else gameIcon.style.display = "none";
-  hideIconSpinner();
-}
+
+function showIconSpinner() { gameIcon.style.display = "none"; iconSpinner.style.display = "block"; }
+function hideIconSpinner() { iconSpinner.style.display = "none"; }
+function setIcon(src) { if (src) { gameIcon.src = src; gameIcon.style.display = "block"; } else gameIcon.style.display = "none"; hideIconSpinner(); }
 
 async function loadIcon(repo, ref) {
   const refStr = ref || "main";
@@ -68,7 +58,6 @@ async function loadIcon(repo, ref) {
   } catch { setIcon(null); }
 }
 
-// Z button: fill form with repo defaults + fetch firebase
 zBtn.addEventListener("click", async () => {
   const repo = repoSelect.value;
   const def = getDef(repo);
@@ -81,7 +70,6 @@ zBtn.addEventListener("click", async () => {
   document.querySelector('[name="admob_banner"]').value = def.admob_android_banner_id || "";
   document.querySelector('[name="admob_interstitial"]').value = def.admob_android_interstitial_id || "";
   document.querySelector('[name="admob_rewarded"]').value = def.admob_android_rewarded_id || "";
-  // Try to load firebase JSON from local firebase-cfg/ by package
   const pkg = document.querySelector('[name="package_name"]').value || def.package_name || "";
   if (fbStatus) { fbStatus.textContent = "⏳ firebase..."; fbStatus.style.display = "inline"; }
   try {
@@ -97,13 +85,8 @@ zBtn.addEventListener("click", async () => {
     } else {
       if (fbStatus) { fbStatus.textContent = "❌ firebase не найден"; fbStatus.style.color = "#f85149"; }
     }
-  } catch {
-    if (fbStatus) { fbStatus.textContent = "❌ ошибка"; fbStatus.style.color = "#f85149"; }
-  }
+  } catch { if (fbStatus) { fbStatus.textContent = "❌ ошибка"; fbStatus.style.color = "#f85149"; } }
 });
-
-// Hide old loadIcon, replace with new one above
-// Remove old loadIcon function below
 
 const BRANCHES = {
   "zey-win/plinko": [
@@ -125,8 +108,7 @@ function updateBranches() {
 let runs = [];
 let customIcon = null;
 let firebaseJson = null;
-const icons = {};
-const runMeta = {}; // runId -> { game_ref, iconDataUrl, version_name, version_code }
+const runMeta = {};
 const releases = [];
 
 const REPO_NAMES = {
@@ -172,18 +154,6 @@ function findDownloads(pkg) {
     if (apk || aab) return { apk: apk?.url || null, aab: aab?.url || null };
   }
   return { apk: null, aab: null };
-}
-
-async function preloadIcons() {
-  const repos = Object.keys(REPO_NAMES);
-  await Promise.all(repos.map(async repo => {
-    try {
-      const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=main`, { headers: op() });
-      if (!res.ok) return;
-      const d = await res.json();
-      if (d.ok && d.icon && d.icon.dataUrl) icons[repo] = d.icon.dataUrl;
-    } catch { }
-  }));
 }
 
 iconFile.addEventListener("change", e => {
@@ -243,12 +213,19 @@ form.addEventListener("submit", async e => {
     const cacheKey = `${p.game_repository}@${p.game_ref}`;
     if (customIcon) {
       iconCache.set(cacheKey, customIcon);
+    } else {
+      // load icon from API for this branch and cache it
+      loadIcon(p.game_repository, p.game_ref).then(() => {
+        const ico = iconCache.get(cacheKey);
+        if (ico && d.run) {
+          runMeta[d.run.id] = { icon: ico, ver: p.version_name || "", code: p.version_code || "" };
+          renderAll();
+        }
+      });
     }
-    // Copy icon to icons[repo] for card display
     if (d.run) {
-      // remember icon + version info for this specific build
       const iconForBuild = customIcon || iconCache.get(cacheKey) || null;
-      runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
+      if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
       runs = [d.run, ...runs];
       renderAll();
     } else loadBuilds();
@@ -298,7 +275,6 @@ function card(r) {
   const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
   const url = r.htmlUrl || "#";
   const repo = repoFromTitle(raw);
-  // Try to match app name to a branch for icon lookup
   const appLower = (app || "").toLowerCase();
   let iconKey = null;
   if (repo === "zey-win/plinko" && appLower.includes("real money")) iconKey = "zey-win/plinko@app/plinko-real-money";
@@ -306,8 +282,12 @@ function card(r) {
   else if (repo === "zey-win/plinko" && appLower.includes("plinko") && !appLower.includes("falling") && !appLower.includes("real")) iconKey = "zey-win/plinko@app/plinko";
   else if (repo === "zey-win/plinko" && appLower.includes("falling")) iconKey = "zey-win/plinko@main";
   else iconKey = `${repo}@main`;
-  const meta = runMeta[r.id] || {};
-  let iconUrl = meta.icon || (typeof runMeta[r.id] === 'string' ? runMeta[r.id] : null);
+  
+  const meta = runMeta[r.id];
+  let iconUrl = null;
+  if (meta && meta.icon) iconUrl = meta.icon;
+  else if (iconKey) iconUrl = iconCache.get(iconKey);
+  
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
 
   let label, cls;
@@ -317,11 +297,10 @@ function card(r) {
   else if (st === "completed") { label = "Ошибка"; cls = "status-failure"; }
   else { label = "🔄 " + st; cls = "status-pending"; }
 
-  const isSuccess = concl === "success";
   const dlApk = findDownloads(pkg);
   const actions = `<div class="actions">
     <button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">❌</button>
-    ${isSuccess ? `
+    ${concl === "success" ? `
       ${dlApk.apk ? `<a class="dl-btn" href="${dlApk.apk}" download>APK</a>` : ""}
       ${dlApk.aab ? `<a class="dl-btn" href="${dlApk.aab}" download>AAB</a>` : ""}
     ` : `
@@ -329,9 +308,8 @@ function card(r) {
     `}
   </div>`;
 
-  // Use version from runMeta if available, otherwise fallback to runNumber/runAttempt
-  const verStr = meta.ver || String(r.runNumber || "");
-  const codeStr = meta.code || String(r.runAttempt || "1");
+  const verStr = (meta && meta.ver) || String(r.runNumber || "");
+  const codeStr = (meta && meta.code) || String(r.runAttempt || "1");
   const versionInfo = verStr ? `| Version ${verStr} (code: ${codeStr})` : "";
   return `<div class="build-card">${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
 }
@@ -339,7 +317,6 @@ function card(r) {
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
 (async () => {
-  await preloadIcons();
   updateBranches();
   loadBuilds();
   setInterval(loadBuilds, 15000);
