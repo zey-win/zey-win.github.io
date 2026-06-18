@@ -229,14 +229,20 @@ function card(r) {
   else if(st === "completed") { label = "❌ Ошибка"; cls = "status-failure"; }
   else { label = "🔄 "+st; cls = "status-pending"; }
 
-  const actions = `<div class="actions">
-    ${downloads.apk ? `<a class="dl-btn" href="${downloads.apk}" download>APK</a>` : ""}
-    ${downloads.aab ? `<a class="dl-btn" href="${downloads.aab}" download>AAB</a>` : ""}
-    <button class="del-btn" onclick="deleteRun(${r.id}, event)">Delete</button>
-    <a href="${esc(url)}" target="_blank">Логи →</a>
-  </div>`;
+  const isSuccess = concl === "success";
+  const actions = isSuccess
+    ? `<div class="actions">
+      ${downloads.apk ? `<a class="dl-btn" href="${downloads.apk}" download>APK</a>` : ""}
+      ${downloads.aab ? `<a class="dl-btn" href="${downloads.aab}" download>AAB</a>` : ""}
+      <button class="del-btn" onclick="deleteRun(${r.id}, event)">Delete</button>
+    </div>`
+    : `<div class="actions">
+      <a href="${esc(url)}" target="_blank" class="log-btn">Логи →</a>
+      <button class="del-btn" onclick="deleteRun(${r.id}, event)">Delete</button>
+    </div>`;
 
-  return `<div class="build-card">${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
+  const versionInfo = r.runNumber ? `| Version ${r.runNumber} (code: ${r.runAttempt || 1})` : "";
+  return `<div class="build-card">${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
 }
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }

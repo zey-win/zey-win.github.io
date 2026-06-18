@@ -45,7 +45,7 @@ details summary{cursor:pointer;color:#58a6ff;font-size:13px;padding:4px 0}
 .build-card .actions a,.dl-btn,.del-btn{padding:4px 8px;border-radius:4px;font-size:12px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4}
 .dl-btn{background:#238636;color:#fff}
 .dl-btn:hover{background:#2ea043}
-.del-btn{background:#da3633;color:#fff}
-.del-btn:hover{background:#f85149}
+.del-btn{background:rgba(218,54,51,0.25);color:#f85149;border:1px solid rgba(218,54,51,0.3)}
+.del-btn:hover{background:rgba(218,54,51,0.4)}
 .build-card .actions a{background:#21262d;color:#58a6ff}
 .build-card .actions a:hover{background:#30363d}
