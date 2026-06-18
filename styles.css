@@ -33,6 +33,11 @@ label input,label select{display:block;width:100%;margin-top:4px;padding:8px;bac
 .spinner{text-align:center;padding:20px;color:#8b949e;font-size:14px}
 .spinner::before{content:"";display:inline-block;width:20px;height:20px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
 @keyframes spin{to{transform:rotate(360deg)}}
-.build-card .actions{display:flex;gap:4px}
-.build-card .actions a{padding:4px 8px;background:#21262d;border-radius:4px;color:#58a6ff;text-decoration:none;font-size:12px}
+.build-card .actions{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.build-card .actions a,.dl-btn,.del-btn{padding:4px 8px;border-radius:4px;font-size:12px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4}
+.dl-btn{background:#238636;color:#fff}
+.dl-btn:hover{background:#2ea043}
+.del-btn{background:#da3633;color:#fff}
+.del-btn:hover{background:#f85149}
+.build-card .actions a{background:#21262d;color:#58a6ff}
 .build-card .actions a:hover{background:#30363d}
