@@ -126,7 +126,7 @@ let runs = [];
 let customIcon = null;
 let firebaseJson = null;
 const icons = {};
-const runMeta = {}; // runId -> { game_ref, iconDataUrl }
+const runMeta = {}; // runId -> { game_ref, iconDataUrl, version_name, version_code }
 const releases = [];
 
 const REPO_NAMES = {
@@ -246,9 +246,9 @@ form.addEventListener("submit", async e => {
     }
     // Copy icon to icons[repo] for card display
     if (d.run) {
-      // remember icon for this specific build
+      // remember icon + version info for this specific build
       const iconForBuild = customIcon || iconCache.get(cacheKey) || null;
-      if (iconForBuild) runMeta[d.run.id] = iconForBuild;
+      runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
       runs = [d.run, ...runs];
       renderAll();
     } else loadBuilds();
@@ -306,7 +306,8 @@ function card(r) {
   else if (repo === "zey-win/plinko" && appLower.includes("plinko") && !appLower.includes("falling") && !appLower.includes("real")) iconKey = "zey-win/plinko@app/plinko";
   else if (repo === "zey-win/plinko" && appLower.includes("falling")) iconKey = "zey-win/plinko@main";
   else iconKey = `${repo}@main`;
-  let iconUrl = runMeta[r.id] || iconCache.get(iconKey) || (icons[repo] || null);
+  const meta = runMeta[r.id] || {};
+  let iconUrl = meta.icon || (typeof runMeta[r.id] === 'string' ? runMeta[r.id] : null) || iconCache.get(iconKey) || (icons[repo] || null);
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
 
   let label, cls;
@@ -328,7 +329,10 @@ function card(r) {
     `}
   </div>`;
 
-  const versionInfo = r.runNumber ? `| Version ${r.runNumber} (code: ${r.runAttempt || 1})` : "";
+  // Use version from runMeta if available, otherwise fallback to runNumber/runAttempt
+  const verStr = meta.ver || String(r.runNumber || "");
+  const codeStr = meta.code || String(r.runAttempt || "1");
+  const versionInfo = verStr ? `| Version ${verStr} (code: ${codeStr})` : "";
   return `<div class="build-card">${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span></div>`;
 }
 
