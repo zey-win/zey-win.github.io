@@ -118,8 +118,20 @@ async function loadReleases() {
   try { const res = await fetch("https://api.github.com/repos/zey-win/ci-cd/releases?per_page=50"); if (!res.ok) return; const data = await res.json(); releases.length = 0; for (const r of (data || [])) { const tag = r.tag_name || ""; const assets = (r.assets || []).map(a => ({ name: a.name, url: a.browser_download_url })); releases.push({ tag, name: r.name, assets }); } } catch {}
 }
 function findDownloads(pkg) {
-  if (!pkg) return { apk: null, aab: null }; const p = pkg.toLowerCase();
-  for (const rel of releases) { const tag = rel.tag.toLowerCase(); if (!tag.includes(p.replace(/\./g, "-"))) continue; const apk = rel.assets.find(a => a.name.endsWith(".apk") && a.name.toLowerCase().includes(p)); const aab = rel.assets.find(a => a.name.endsWith(".aab") && a.name.toLowerCase().includes(p)); if (apk || aab) return { apk: apk?.url || null, aab: aab?.url || null }; }
+  if (!pkg) return { apk: null, aab: null };
+  // Берём последнюю часть package_name (после последней точки)
+  // com.***.plinkofun → plinkofun
+  // com.playsocialgames.plinkofun → plinkofun
+  const parts = pkg.toLowerCase().split(".").filter(Boolean);
+  const lastPart = parts[parts.length - 1];
+  if (!lastPart || lastPart.includes("*")) return { apk: null, aab: null };
+  for (const rel of releases) {
+    const searchIn = (rel.name || rel.tag || "").toLowerCase();
+    if (!searchIn.includes(lastPart)) continue;
+    const apk = rel.assets.find(a => a.name.endsWith(".apk") && a.name.toLowerCase().includes(lastPart));
+    const aab = rel.assets.find(a => a.name.endsWith(".aab") && a.name.toLowerCase().includes(lastPart));
+    if (apk || aab) return { apk: apk?.url || null, aab: aab?.url || null };
+  }
   return { apk: null, aab: null };
 }
 
@@ -177,6 +189,13 @@ async function loadBuilds() {
     const [runsRes] = await Promise.all([fetch(`${apiBase}/api/runs`), loadReleases()]);
     if (!runsRes.ok) { buildsContainer.innerHTML = "<p>No builds</p>"; return; }
     const d = await runsRes.json(); const oldRuns = runs; runs = Array.isArray(d.runs) ? d.runs : [];
+    // Ensure timer for all active builds (restore after page reload)
+    for (const r of runs) {
+      if (r.status !== "completed" && !timers[r.id]) {
+        const created = r.createdAt ? new Date(r.createdAt).getTime() : Date.now();
+        timers[r.id] = { start: created, total: 23 * 60 * 1000 };
+      }
+    }
     for (const r of runs) { const old = oldRuns.find(o => o.id === r.id); if (old && old.status !== "completed" && r.status === "completed") { if (r.conclusion === "success") { playFanfare(); fireConfetti(4000); } else { playErrorSound(); } } }
     renderAll();
   } catch { buildsContainer.innerHTML = "<p>Load error</p>"; } finally { if (loading) loading.style.display = "none"; }
@@ -215,7 +234,7 @@ function card(r, idx) {
   let timerHtml = ""; const t = timers[r.id];
   if (t) { const left = Math.max(0, t.total - (Date.now() - t.start)); if (left > 0) { const m = Math.floor(left / 60000); const s = Math.floor((left % 60000) / 1000); const cs = Math.floor((left % 1000) / 10); timerHtml = `<span class="timer" style="color:#ffd700">⏱ ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")},${String(cs).padStart(2,"0")}</span>`; } else { delete timers[r.id]; } }
   const bgStyle = idx !== undefined && idx % 2 === 0 ? 'style="background:#1a202c"' : 'style="background:#161b22"';
-  return `<div class="build-card" ${bgStyle}>${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div>${actions}<span class="status ${cls}">${label}</span><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">❌</button></div>`;
+  return `<div class="build-card" ${bgStyle}>${iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : ""}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div><div class="right-col"><span class="status ${cls}">${label}</span><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">delete</button>${actions}</div></div>`;
 }
 
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
