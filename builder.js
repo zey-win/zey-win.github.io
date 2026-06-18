@@ -234,8 +234,8 @@ function card(r) {
   const actions = `<div class="actions">
     <button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">❌</button>
     ${isSuccess ? `
-      <a class="dl-btn ${dlApk.apk ? '' : 'disabled'}" href="${dlApk.apk || '#'}" ${dlApk.apk ? 'download' : 'aria-disabled="true"'}>APK</a>
-      <a class="dl-btn ${dlApk.aab ? '' : 'disabled'}" href="${dlApk.aab || '#'}" ${dlApk.aab ? 'download' : 'aria-disabled="true"'}>AAB</a>
+      ${dlApk.apk ? `<a class="dl-btn" href="${dlApk.apk}" download>APK</a>` : ""}
+      ${dlApk.aab ? `<a class="dl-btn" href="${dlApk.aab}" download>AAB</a>` : ""}
     ` : `
       <a href="${esc(url)}" target="_blank" class="log-btn">Логи →</a>
     `}
