@@ -10,9 +10,25 @@ const modal = document.getElementById("modal");
 const form = document.getElementById("build-form");
 const newBuildBtn = document.getElementById("new-build");
 const cancelBtn = document.getElementById("modal-cancel");
+const iconFile = document.getElementById("icon-file");
 const loading = document.getElementById("loading");
 
 let localRuns = [];
+let customIconDataUrl = null;
+
+// Custom icon upload
+iconFile.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.type !== "image/png") { alert("Только PNG"); return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    customIconDataUrl = reader.result;
+    gameIcon.src = reader.result;
+    gameIcon.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+});
 
 // Icon loading
 async function loadIcon(repo) {
@@ -43,6 +59,7 @@ repoSelect.addEventListener("change", () => loadIcon(repoSelect.value));
 
 // Modal
 newBuildBtn.addEventListener("click", () => {
+  customIconDataUrl = null;
   modal.classList.remove("hidden");
   loadIcon(repoSelect.value);
 });
@@ -57,7 +74,8 @@ form.addEventListener("submit", async e => {
     game_repository: fd.get("game_repository"),
     app_name: fd.get("app_name"),
     package_name: fd.get("package_name"),
-    build_format: fd.get("build_format")
+    build_format: fd.get("build_format"),
+    iconDataUrl: customIconDataUrl || ""
   };
   modal.classList.add("hidden");
   try {
