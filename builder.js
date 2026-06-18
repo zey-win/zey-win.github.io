@@ -165,7 +165,7 @@ async function loadBuilds() {
   } catch { buildsContainer.innerHTML = "<p>Load error</p>"; } finally { if (loading) loading.style.display = "none"; }
 }
 
-async function deleteRun(runId, e) { if (!confirm("Delete this build?")) return; const btn = e?.target; if (btn) btn.disabled = true; try { await fetch(`${apiBase}/api/cancel`, { method: "POST", headers: op(), body: JSON.stringify({ run_id: runId }) }); runs = runs.filter(r => r.id !== runId); renderAll(); } catch (err) { alert("Delete error: " + err.message); } finally { if (btn) btn.disabled = false; } }
+async function deleteRun(runId, e) { if (!confirm("Delete this build?")) return; const btn = e?.target; if (btn) btn.disabled = true; try { await fetch(`${apiBase}/api/delete`, { method: "POST", headers: op(), body: JSON.stringify({ run_id: runId }) }); runs = runs.filter(r => r.id !== runId); renderAll(); } catch (err) { alert("Delete error: " + err.message); } finally { if (btn) btn.disabled = false; } }
 
 function renderAll() {
   const active = runs.filter(r => r.status !== "completed"); const done = runs.filter(r => r.status === "completed" && r.conclusion === "success"); const fail = runs.filter(r => r.status === "completed" && r.conclusion !== "success");
