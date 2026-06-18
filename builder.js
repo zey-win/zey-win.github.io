@@ -36,6 +36,7 @@ let runs = [];
 let customIcon = null;
 let firebaseJson = null;
 const icons = {};
+const iconCache = new Map(); // per-branch icon cache
 const releases = [];
 
 const REPO_NAMES = {
@@ -130,9 +131,6 @@ async function loadIcon(repo, ref) {
     } else gameIcon.style.display = "none";
   } catch { gameIcon.style.display = "none"; }
 }
-
-// We need iconCache Map for per-branch caching
-const iconCache = new Map();
 
 repoSelect.addEventListener("change", updateBranches);
 branchSelect.addEventListener("change", () => loadIcon(repoSelect.value, branchSelect.value));
