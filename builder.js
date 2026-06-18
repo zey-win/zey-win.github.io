@@ -39,10 +39,10 @@ async function loadIcon(repo, ref) {
   showIconSpinner();
   try {
     const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(refStr)}`, { headers: op() });
-    if (!res.ok) { setIcon(null); return; }
+    if (!res.ok) { setIcon(null); return null; }
     const d = await res.json();
-    if (d.ok && d.icon?.dataUrl) { iconCache.set(cacheKey, d.icon.dataUrl); setIcon(d.icon.dataUrl); } else setIcon(null);
-  } catch { setIcon(null); }
+    if (d.ok && d.icon?.dataUrl) { iconCache.set(cacheKey, d.icon.dataUrl); setIcon(d.icon.dataUrl); return d.icon.dataUrl; } else { setIcon(null); return null; }
+  } catch { setIcon(null); return null; }
 }
 
 let audioCtx = null;
@@ -133,17 +133,23 @@ modal.addEventListener("click", e => { if (e.target === modal) modal.classList.a
 
 form.addEventListener("submit", async e => {
   e.preventDefault(); const fd = new FormData(form);
-  const p = { game_repository: fd.get("game_repository") || "zey-win/plinko", game_ref: fd.get("game_ref") || "main", app_name: fd.get("app_name") || "", package_name: fd.get("package_name") || "", build_format: fd.get("build_format") || "apk", version_name: fd.get("version_name") || "", version_code: fd.get("version_code") || "", zeywin_api_key: fd.get("zeywin_api_key") || "", admob_android_app_id: fd.get("admob_app_id") || "", admob_android_banner_id: fd.get("admob_banner") || "", admob_android_interstitial_id: fd.get("admob_interstitial") || "", admob_android_rewarded_id: fd.get("admob_rewarded") || "", iconDataUrl: customIcon || "", firebaseJsonBase64: firebaseJson || "" };
+  const cacheKey = `${fd.get("game_repository") || "zey-win/plinko"}@${fd.get("game_ref") || "main"}`;
+  // If no custom icon, wait for API-loaded icon and use it
+  if (!customIcon) {
+    if (iconLoadedDeferred) { try { await iconLoadedDeferred; } catch {} }
+    const cachedIcon = iconCache.get(cacheKey);
+    if (cachedIcon) customIcon = cachedIcon;
+  }
+  const iconData = customIcon || "";
+  const p = { game_repository: fd.get("game_repository") || "zey-win/plinko", game_ref: fd.get("game_ref") || "main", app_name: fd.get("app_name") || "", package_name: fd.get("package_name") || "", build_format: fd.get("build_format") || "apk", version_name: fd.get("version_name") || "", version_code: fd.get("version_code") || "", zeywin_api_key: fd.get("zeywin_api_key") || "", admob_android_app_id: fd.get("admob_app_id") || "", admob_android_banner_id: fd.get("admob_banner") || "", admob_android_interstitial_id: fd.get("admob_interstitial") || "", admob_android_rewarded_id: fd.get("admob_rewarded") || "", iconDataUrl: iconData, firebaseJsonBase64: firebaseJson || "" };
   modal.classList.add("hidden");
   try {
     const res = await fetch(`${apiBase}/api/build`, { method: "POST", headers: op(), body: JSON.stringify(p) });
     if (!res.ok) { alert("Error: " + await res.text().catch(() => "")); return; }
-    const d = await res.json(); const cacheKey = `${p.game_repository}@${p.game_ref}`;
+    const d = await res.json();
     if (customIcon) iconCache.set(cacheKey, customIcon);
-    else { loadIcon(p.game_repository, p.game_ref).then(() => { const ico = iconCache.get(cacheKey); if (ico && d.run) { runMeta[d.run.id] = { icon: ico, ver: p.version_name || "", code: p.version_code || "" }; renderAll(); } }); }
     if (d.run) {
-      let iconForBuild = customIcon || iconCache.get(cacheKey) || null;
-      if (!iconForBuild && iconLoadedDeferred) { try { await iconLoadedDeferred; } catch {} iconForBuild = iconCache.get(cacheKey) || null; }
+      const iconForBuild = customIcon || iconCache.get(cacheKey) || null;
       if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
       timers[d.run.id] = { start: Date.now(), total: 23 * 60 * 1000 };
       runs = [d.run, ...runs]; renderAll();
