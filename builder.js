@@ -9,11 +9,28 @@ const form = $("build-form");
 const newBuildBtn = $("new-build");
 const cancelBtn = $("modal-cancel");
 const repoSelect = $("repo-select");
-const branchInput = $("branch-input");
+const branchSelect = $("branch-select");
 const gameIcon = $("game-icon");
 const iconFile = $("icon-file");
 const firebaseFile = $("firebase-file");
 const loading = $("loading");
+
+const BRANCHES = {
+  "zey-win/plinko": [
+    {ref:"main", label:"Plinko Falling"},
+    {ref:"app/plinko", label:"Plinko"},
+    {ref:"app/plinko-real-game", label:"Plinko Real Game"},
+    {ref:"app/plinko-real-money", label:"Plinko Real Money"}
+  ]
+};
+const DEFAULT_BRANCHES = [{ref:"main", label:"main"}];
+
+function updateBranches() {
+  const repo = repoSelect.value;
+  const list = BRANCHES[repo] || DEFAULT_BRANCHES;
+  branchSelect.innerHTML = list.map(b => `<option value="${b.ref}">${b.label}</option>`).join("");
+  loadIcon(repo, branchSelect.value);
+}
 
 let runs = [];
 let customIcon = null;
@@ -96,24 +113,35 @@ firebaseFile.addEventListener("change", e => {
   r.readAsDataURL(f);
 });
 
-async function loadIcon(repo) {
-  if(icons[repo]) { gameIcon.src = icons[repo]; gameIcon.style.display = "block"; return; }
+async function loadIcon(repo, ref) {
+  const refStr = ref || "main";
+  const cacheKey = `${repo}@${refStr}`;
+  const cached = iconCache ? iconCache.get(cacheKey) : icons[repo];
+  if(cached) { gameIcon.src = cached; gameIcon.style.display = "block"; return; }
   try {
-    const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=main`, { headers: op() });
+    const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(refStr)}`, { headers: op() });
     if(!res.ok) { gameIcon.style.display = "none"; return; }
     const d = await res.json();
-    if(d.ok && d.icon?.dataUrl) { icons[repo]=d.icon.dataUrl; gameIcon.src=d.icon.dataUrl; gameIcon.style.display="block"; }
-    else gameIcon.style.display="none";
-  } catch { gameIcon.style.display="none"; }
+    if(d.ok && d.icon?.dataUrl) {
+      if(iconCache) iconCache.set(cacheKey, d.icon.dataUrl);
+      else icons[repo] = d.icon.dataUrl;
+      gameIcon.src = d.icon.dataUrl;
+      gameIcon.style.display = "block";
+    } else gameIcon.style.display = "none";
+  } catch { gameIcon.style.display = "none"; }
 }
 
-repoSelect.addEventListener("change", () => loadIcon(repoSelect.value));
+// We need iconCache Map for per-branch caching
+const iconCache = new Map();
+
+repoSelect.addEventListener("change", updateBranches);
+branchSelect.addEventListener("change", () => loadIcon(repoSelect.value, branchSelect.value));
 
 newBuildBtn.addEventListener("click", () => {
   customIcon = null;
   firebaseJson = null;
   modal.classList.remove("hidden");
-  loadIcon(repoSelect.value);
+  updateBranches();
 });
 cancelBtn.addEventListener("click", () => modal.classList.add("hidden"));
 modal.addEventListener("click", e => { if(e.target===modal) modal.classList.add("hidden"); });
@@ -142,7 +170,10 @@ form.addEventListener("submit", async e => {
     const res = await fetch(`${apiBase}/api/build`, { method:"POST", headers:op(), body:JSON.stringify(p) });
     if(!res.ok) { alert("Error: " + await res.text().catch(()=>"")); return; }
     const d = await res.json();
-    if(customIcon) icons[p.game_repository] = customIcon;
+    if(customIcon) {
+      const cacheKey = `${p.game_repository}@${p.game_ref}`;
+      iconCache.set(cacheKey, customIcon);
+    }
     if(d.run) { runs = [d.run, ...runs]; renderAll(); } else loadBuilds();
   } catch(err) { alert("Error: "+err.message); }
 });
@@ -214,6 +245,7 @@ function esc(s) { const d = document.createElement("div"); d.textContent = s; re
 
 (async () => {
   await preloadIcons();
+  updateBranches();
   loadBuilds();
   setInterval(loadBuilds, 15000);
 })();
