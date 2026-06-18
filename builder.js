@@ -7,6 +7,9 @@ const modal = document.getElementById("modal");
 const form = document.getElementById("build-form");
 const newBuildBtn = document.getElementById("new-build");
 const cancelBtn = document.getElementById("modal-cancel");
+const loading = document.getElementById("loading");
+
+let localRuns = [];
 
 // Modal
 newBuildBtn.addEventListener("click", () => modal.classList.remove("hidden"));
@@ -35,7 +38,13 @@ form.addEventListener("submit", async e => {
       alert("Ошибка: " + txt);
       return;
     }
-    loadBuilds();
+    const data = await res.json();
+    if (data.run) {
+      localRuns = [data.run, ...localRuns];
+      renderAll();
+    } else {
+      loadBuilds();
+    }
   } catch (err) {
     alert("Ошибка сети: " + err.message);
   }
@@ -43,22 +52,32 @@ form.addEventListener("submit", async e => {
 
 // Load all
 async function loadBuilds() {
+  if (loading) loading.style.display = "block";
   try {
     const res = await fetch(`${apiBase}/api/runs`);
     if (!res.ok) { buildsContainer.innerHTML = "<p>Нет сборок</p>"; return; }
     const data = await res.json();
-    const runs = Array.isArray(data.runs) ? data.runs : [];
-    const completed = runs.filter(r => r.status === "completed");
-    const active = runs.filter(r => r.status !== "completed");
-    buildsContainer.innerHTML = completed.length
-      ? completed.slice(0, 30).map(r => renderCard(r)).join("")
-      : "<p>Нет завершённых сборок</p>";
-    activeContainer.innerHTML = active.length
-      ? active.map(r => renderCard(r)).join("")
-      : "<p>Нет активных сборок</p>";
+    localRuns = Array.isArray(data.runs) ? data.runs : [];
+    renderAll();
   } catch {
     buildsContainer.innerHTML = "<p>Ошибка загрузки</p>";
+  } finally {
+    if (loading) loading.style.display = "none";
   }
+}
+
+function renderAll() {
+  const active = localRuns.filter(r => r.status !== "completed");
+  const completed = localRuns.filter(r => r.status === "completed" && r.conclusion === "success");
+  const failed = localRuns.filter(r => r.status === "completed" && r.conclusion !== "success");
+
+  activeContainer.innerHTML = active.length
+    ? active.map(r => renderCard(r)).join("")
+    : "<p>Нет активных сборок</p>";
+
+  buildsContainer.innerHTML = completed.length || failed.length
+    ? [...completed, ...failed].slice(0, 30).map(r => renderCard(r)).join("")
+    : "<p>Нет завершённых сборок</p>";
 }
 
 function renderCard(r) {

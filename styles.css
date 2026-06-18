@@ -26,6 +26,9 @@ label input,label select{display:block;width:100%;margin-top:4px;padding:8px;bac
 .status-failure{background:#da363320;color:#f85149}
 .status-pending{background:#d2992220;color:#d29922}
 #builds-container,#active-container{min-height:60px}
+.spinner{text-align:center;padding:20px;color:#8b949e;font-size:14px}
+.spinner::before{content:"";display:inline-block;width:20px;height:20px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
 .build-card .actions{display:flex;gap:4px}
 .build-card .actions a{padding:4px 8px;background:#21262d;border-radius:4px;color:#58a6ff;text-decoration:none;font-size:12px}
 .build-card .actions a:hover{background:#30363d}
