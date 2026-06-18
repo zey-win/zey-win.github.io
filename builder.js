@@ -239,10 +239,12 @@ form.addEventListener("submit", async e => {
     const res = await fetch(`${apiBase}/api/build`, { method: "POST", headers: op(), body: JSON.stringify(p) });
     if (!res.ok) { alert("Error: " + await res.text().catch(() => "")); return; }
     const d = await res.json();
+    const cacheKey = `${p.game_repository}@${p.game_ref}`;
     if (customIcon) {
-      const cacheKey = `${p.game_repository}@${p.game_ref}`;
       iconCache.set(cacheKey, customIcon);
     }
+    // Copy icon to icons[repo] for card display
+    if (iconCache.has(cacheKey)) icons[p.game_repository] = iconCache.get(cacheKey);
     if (d.run) { runs = [d.run, ...runs]; renderAll(); } else loadBuilds();
   } catch (err) { alert("Error: " + err.message); }
 });
