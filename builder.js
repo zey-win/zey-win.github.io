@@ -16,6 +16,19 @@ const loading = document.getElementById("loading");
 let localRuns = [];
 let customIconDataUrl = null;
 
+// Repository list for icon lookup
+const REPOS = ["zey-win/plinko","zey-win/blackjack","zey-win/roulette","zey-win/dragon-tiger","zey-win/baccarat-tiger","zey-win/wheel-of-fortune","zey-win/Unstopable","zey-win/SlotSpot"];
+
+// Extract repo from displayTitle like "Android: Plinko / com.xxx / apk / builder-xxx"
+function extractRepo(title) {
+  const t = title || "";
+  for (const r of REPOS) {
+    const name = r.split("/")[1].toLowerCase();
+    if (t.toLowerCase().includes(name)) return r;
+  }
+  return null;
+}
+
 // Custom icon upload
 iconFile.addEventListener("change", e => {
   const file = e.target.files[0];
@@ -30,28 +43,34 @@ iconFile.addEventListener("change", e => {
   reader.readAsDataURL(file);
 });
 
-// Icon loading
+// Load icon async and cache
 async function loadIcon(repo) {
   if (iconCache.has(repo)) {
     gameIcon.src = iconCache.get(repo);
     gameIcon.style.display = "block";
     return;
   }
+  const dataUrl = await fetchIcon(repo);
+  if (dataUrl) {
+    iconCache.set(repo, dataUrl);
+    gameIcon.src = dataUrl;
+    gameIcon.style.display = "block";
+  } else {
+    gameIcon.style.display = "none";
+  }
+}
+
+async function fetchIcon(repo) {
   try {
     const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=main`, {
       headers: operatorHeaders()
     });
-    if (!res.ok) { gameIcon.style.display = "none"; return; }
+    if (!res.ok) return null;
     const data = await res.json();
-    if (data.ok && data.icon?.dataUrl) {
-      iconCache.set(repo, data.icon.dataUrl);
-      gameIcon.src = data.icon.dataUrl;
-      gameIcon.style.display = "block";
-    } else {
-      gameIcon.style.display = "none";
-    }
+    if (data.ok && data.icon?.dataUrl) return data.icon.dataUrl;
+    return null;
   } catch {
-    gameIcon.style.display = "none";
+    return null;
   }
 }
 
@@ -109,6 +128,16 @@ async function loadBuilds() {
     if (!res.ok) { buildsContainer.innerHTML = "<p>Нет сборок</p>"; return; }
     const data = await res.json();
     localRuns = Array.isArray(data.runs) ? data.runs : [];
+    // Hydrate icons for all runs in background
+    for (const r of localRuns) {
+      const repo = extractRepo(r.displayTitle || r.name);
+      if (repo && !iconCache.has(repo)) {
+        fetchIcon(repo).then(dataUrl => {
+          if (dataUrl) iconCache.set(repo, dataUrl);
+          renderAll();
+        });
+      }
+    }
     renderAll();
   } catch {
     buildsContainer.innerHTML = "<p>Ошибка загрузки</p>";
@@ -137,6 +166,8 @@ function renderCard(r) {
   const status = r.status || "unknown";
   const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : "";
   const url = r.htmlUrl || "#";
+  const repo = extractRepo(name);
+  const iconUrl = repo && iconCache.has(repo) ? iconCache.get(repo) : null;
   let label, cls;
   if (concl === "success") { label = "✅ Готов"; cls = "status-success"; }
   else if (concl === "failure") { label = "❌ Ошибка"; cls = "status-failure"; }
@@ -144,6 +175,7 @@ function renderCard(r) {
   else if (status === "completed") { label = "❌ Ошибка"; cls = "status-failure"; }
   else { label = "🔄 " + status; cls = "status-pending"; }
   return `<div class="build-card">
+    ${iconUrl ? `<img class="card-icon" src="${esc(iconUrl)}" alt="">` : ""}
     <div class="info">
       <div class="app-name">${esc(name)}</div>
       <div class="meta">${esc(created)}</div>
