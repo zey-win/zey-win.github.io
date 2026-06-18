@@ -18,18 +18,25 @@ const loading = $("loading");
 const zBtn = $("z-btn");
 
 const iconCache = new Map(); // per-branch icon cache (должен быть перед loadIcon)
-const REPO_DEFAULTS = {
-  "zey-win/plinko": {
-    app_name: "Plinko Real Money",
-    package_name: "com.playsocialgames.plinkofun",
-    admob_android_app_id: "ca-app-pub-1585565865476548~5854522209",
-    admob_android_banner_id: "ca-app-pub-1585565865476548/2893595529",
-    admob_android_interstitial_id: "ca-app-pub-1585565865476548/2521834122",
-    admob_android_rewarded_id: "ca-app-pub-1585565865476548/7091315351",
-    zeywin_api_key: "zw_7b07dc24806408f6e655dcf0422e15c5e028d40d440b3e1a",
-    firebase_url: "https://raw.githubusercontent.com/zey-win/plinko/main/Assets/Plugins/Android/google-services.json"
-  }
+const REPO_DEFAULTS = {};
+function getDef(repo) { return REPO_DEFAULTS[repo] || {}; }
+REPO_DEFAULTS["zey-win/plinko"] = {
+  app_name: "Plinko Real Money",
+  package_name: "com.playsocialgames.plinkofun",
+  admob_android_app_id: "ca-app-pub-1585565865476548~5854522209",
+  admob_android_banner_id: "ca-app-pub-1585565865476548/2893595529",
+  admob_android_interstitial_id: "ca-app-pub-1585565865476548/2521834122",
+  admob_android_rewarded_id: "ca-app-pub-1585565865476548/7091315351",
+  zeywin_api_key: "zw_7b07dc24806408f6e655dcf0422e15c5e028d40d440b3e1a",
+  firebase_url: "https://raw.githubusercontent.com/zey-win/plinko/main/Assets/Plugins/Android/google-services.json"
 };
+REPO_DEFAULTS["zey-win/blackjack"] = { app_name: "Blackjack", package_name: "com.playmaxsolutions.blackjack" };
+REPO_DEFAULTS["zey-win/roulette"] = { app_name: "Roulette", package_name: "com.playmaxsolutions.roulette" };
+REPO_DEFAULTS["zey-win/dragon-tiger"] = { app_name: "Dragon Tiger", package_name: "com.playmaxsolutions.dragontiger" };
+REPO_DEFAULTS["zey-win/baccarat-tiger"] = { app_name: "Baccarat", package_name: "com.playmaxsolutions.baccarattiger" };
+REPO_DEFAULTS["zey-win/wheel-of-fortune"] = { app_name: "Wheel of Fortune", package_name: "com.playmaxsolutions.wheeloffortune" };
+REPO_DEFAULTS["zey-win/Unstopable"] = { app_name: "Unstopable: Real Money", package_name: "com.playmaxsolutions.unstopable" };
+REPO_DEFAULTS["zey-win/SlotSpot"] = { app_name: "SlotSpot", package_name: "com.playmaxsolutions.slotspot" };
 // Utility to set spinner on icon
 function showIconSpinner() {
   gameIcon.style.display = "none";
