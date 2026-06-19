@@ -80,6 +80,11 @@ const runMeta = {}, icons = {}, releases = [], timers = {};
 let currentIconDataUrl = null; // the icon dataUrl currently shown in modal
 
 const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette", "zey-win/dragon-tiger": "dragon tiger", "zey-win/baccarat-tiger": "baccarat", "zey-win/wheel-of-fortune": "lucky wheel", "zey-win/Unstopable": "unstopable", "zey-win/SlotSpot": "slotspot" };
+const ICON_OVERRIDES = {
+  "zey-win/plinko@main": "repo-icons/zey-win__plinko.png",
+  "zey-win/baccarat-tiger@main": "repo-icons/zey-win__baccarat-tiger.png",
+  "zey-win/wheel-of-fortune@main": "repo-icons/zey-win__wheel-of-fortune.png"
+};
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
 function parseTitle(title) { if (!title) return { app: "Build", pkg: "" }; const parts = title.replace(/^Android:\s*/i, "").split(" / ").map(p => p.trim()); return { app: parts[0] || "Build", pkg: parts[1] || "" }; }
@@ -250,6 +255,23 @@ async function preloadIcons() {
   }));
 }
 
+async function applyIconOverrides() {
+  for (const [key, url] of Object.entries(ICON_OVERRIDES)) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const blob = await res.blob();
+      const reader = new FileReader();
+      const dataUrl = await new Promise(resolve => { reader.onload = () => resolve(reader.result); reader.readAsDataURL(blob); });
+      if (dataUrl) {
+        iconCache.set(key, dataUrl);
+        const repo = key.split("@")[0];
+        icons[repo] = dataUrl;
+      }
+    } catch {}
+  }
+}
+
 setInterval(() => { const active = runs.filter(r => r.status !== "completed"); if (active.some(r => timers[r.id])) renderAll(); }, 50);
 
-(async () => { await preloadIcons(); await loadReleases(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
+(async () => { await preloadIcons(); await applyIconOverrides(); await loadReleases(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
