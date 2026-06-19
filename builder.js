@@ -146,7 +146,7 @@ form.addEventListener("submit", async e => {
     if (d.run) {
       const iconForBuild = currentIconDataUrl || iconCache.get(cacheKey) || null;
       if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
-      timers[d.run.id] = { start: Date.now(), total: 23 * 60 * 1000 };
+      timers[d.run.id] = { start: Date.now(), total: (39 + (d.run.id % 12)) * 60 * 1000 };
       runs = [d.run, ...runs]; renderAll();
     } else loadBuilds();
     iconLoadedDeferred = null;
@@ -163,7 +163,7 @@ async function loadBuilds() {
     for (const r of runs) {
       if (r.status !== "completed" && !timers[r.id]) {
         const created = r.createdAt ? new Date(r.createdAt).getTime() : Date.now();
-        timers[r.id] = { start: created, total: 23 * 60 * 1000 };
+        timers[r.id] = { start: created, total: (39 + (r.id % 12)) * 60 * 1000 };
       }
     }
     for (const r of runs) { const old = oldRuns.find(o => o.id === r.id); if (old && old.status !== "completed" && r.status === "completed") { if (r.conclusion === "success") { playFanfare(); fireConfetti(4000); } else { playErrorSound(); } } }
