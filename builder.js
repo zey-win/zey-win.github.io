@@ -206,8 +206,8 @@ function card(r, idx) {
   const progressClass = isProgress ? " in-progress" : "";
   const bgStyle = idx !== undefined && idx % 2 === 0 ? 'style="background:#1a202c"' : 'style="background:#161b22"';
   const iconBlock = iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : `<div class="card-icon card-icon-placeholder">🎮</div>`;
-  const infoBlock = `<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div><div class="meta"><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">Delete</button></div></div>`;
-  const rightBlock = `<div class="right-col"><span class="status ${cls}">${label}</span>${concl === "success" && downloads.apk ? `<a class="dl-btn" href="${downloads.apk}" download>APK</a>` : ""}${concl === "success" && downloads.aab ? `<a class="dl-btn" href="${downloads.aab}" download>AAB</a>` : ""}${concl !== "success" ? `<a href="${esc(url)}" target="_blank" class="log-btn">Логи</a>` : ""}</div>`;
+  const infoBlock = `<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div>`;
+  const rightBlock = `<div class="right-col"><div class="actions-col">${concl === "success" && downloads.apk ? `<a class="dl-btn" href="${downloads.apk}" download>APK</a>` : ""}${concl === "success" && downloads.aab ? `<a class="dl-btn" href="${downloads.aab}" download>AAB</a>` : ""}${concl !== "success" ? `<a href="${esc(url)}" target="_blank" class="log-btn" style="text-align:center">Логи</a>` : ""}</div><div class="actions-col"><span class="status ${cls} status-small">${label}</span><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">Delete</button></div></div>`;
   return `<div class="build-card${progressClass}" ${bgStyle}>${iconBlock}${infoBlock}${rightBlock}</div>`;
 }
 
