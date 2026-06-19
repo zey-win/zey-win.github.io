@@ -60,36 +60,6 @@ function fireConfetti(dur = 4000) {
   anim();
 }
 
-let particleIntervals = {};
-function startSparks(cardEl, runId) {
-  if (particleIntervals[runId]) return;
-  const canvas = document.createElement("canvas");
-  canvas.style.cssText = "position:absolute;inset:0;pointer-events:none;width:100%;height:100%;border-radius:8px;z-index:2";
-  cardEl.style.position = "relative"; cardEl.appendChild(canvas);
-  const ctx = canvas.getContext("2d");
-  function resize() { canvas.width = cardEl.offsetWidth; canvas.height = cardEl.offsetHeight; }
-  resize();
-  const sparks = [];
-  for (let i = 0; i < 25; i++) sparks.push({
-    x: Math.random() * canvas.width, y: Math.random() * canvas.height * 0.3,
-    vx: (Math.random() - 0.5) * 0.8, vy: Math.random() * 0.5 + 0.2,
-    size: Math.random() * 2 + 1.5, alpha: Math.random() * 0.8 + 0.2, aDir: -0.015 - Math.random() * 0.02
-  });
-  function anim() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const s of sparks) {
-      s.y += s.vy; s.x += s.vx + Math.sin(Date.now() * 0.00003 + s.x * 0.1) * 0.3; s.alpha += s.aDir;
-      if (s.alpha < 0.05) { s.alpha = 0.05; s.aDir = -s.aDir; } if (s.alpha > 0.8) { s.alpha = 0.8; s.aDir = -s.aDir; }
-      if (s.y > canvas.height + 10) { s.y = -5; s.x = Math.random() * canvas.width; s.alpha = 0.5; }
-      ctx.globalAlpha = s.alpha; ctx.beginPath(); ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffd700"; ctx.shadowColor = "#ffa500"; ctx.shadowBlur = 8; ctx.fill(); ctx.shadowBlur = 0;
-    }
-    particleIntervals[runId] = requestAnimationFrame(anim);
-  }
-  anim();
-}
-function stopSparks(runId) { if (particleIntervals[runId]) { cancelAnimationFrame(particleIntervals[runId]); delete particleIntervals[runId]; } }
-
 zBtn.addEventListener("click", async () => {
   const repo = repoSelect.value; const def = getDef(repo); const fbStatus = document.getElementById("firebase-status"); const fbBtn = document.getElementById("firebase-btn");
   document.querySelector('[name="app_name"]').value = def.app_name || ""; document.querySelector('[name="package_name"]').value = def.package_name || "";
@@ -207,7 +177,7 @@ function renderAll() {
   const active = runs.filter(r => r.status !== "completed"); const done = runs.filter(r => r.status === "completed" && r.conclusion === "success"); const fail = runs.filter(r => r.status === "completed" && r.conclusion !== "success");
   activeContainer.innerHTML = active.length ? active.map((r, i) => card(r, i)).join("") : "";
   buildsContainer.innerHTML = done.length || fail.length ? [...done, ...fail].slice(0, 30).map((r, i) => card(r, i)).join("") : "";
-  if (active.length) { setTimeout(() => { const cards = activeContainer.querySelectorAll(".build-card"); cards.forEach((el, i) => { const rid = active[i]?.id; if (rid) startSparks(el, rid); }); }, 50); }
+  
 }
 
 function card(r, idx) {

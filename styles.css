@@ -37,8 +37,7 @@ details summary{cursor:pointer;color:#58a6ff;font-size:13px;padding:4px 0}
 .modal-actions button{padding:8px 20px}
 .modal-actions button[type=submit]{background:#238636;color:#fff}
 .build-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}
-.build-card.in-progress::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(255,255,255,0.03) 8px,rgba(255,255,255,0.03) 16px);animation:stripeMove 1s linear infinite;pointer-events:none;z-index:1}
-@keyframes stripeMove{0%{background-position:0 0}100%{background-position:32px 32px}}
+.build-card.in-progress::before{content:"";position:absolute;inset:0;background:url('texture_card.gif') center/cover;opacity:0.15;pointer-events:none;z-index:1}
 .build-card .right-col{display:flex;flex-direction:column;align-items:flex-end;gap:8px;min-width:140px}
 .card-icon{width:64px;height:64px;border-radius:12px;flex-shrink:0;object-fit:cover}
 .build-card .info{flex:1;min-width:0}
