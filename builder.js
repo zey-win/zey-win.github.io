@@ -208,8 +208,7 @@ function card(r, idx) {
   let timerHtml = ""; const t = timers[r.id];
   if (t) { const left = Math.max(0, t.total - (Date.now() - t.start)); if (left > 0) { const m = Math.floor(left / 60000); const s = Math.floor((left % 60000) / 1000); const cs = Math.floor((left % 1000) / 10); timerHtml = `<span class="timer" style="color:#ffd700">⏱ ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")},${String(cs).padStart(2,"0")}</span>`; } else { delete timers[r.id]; } }
   const isProgress = ["in_progress", "pending", "queued", "waiting"].includes(st);
-  const GIF_VARIANTS = [0, 68, 136, 204, 272];
-  const gifClass = isProgress ? ` in-progress gif-${GIF_VARIANTS[r.id % GIF_VARIANTS.length]}` : "";
+  const gifClass = isProgress ? " in-progress" : "";
   const bgStyle = idx !== undefined && idx % 2 === 0 ? 'style="background:#1a202c"' : 'style="background:#161b22"';
   const iconBlock = iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : `<div class="card-icon card-icon-placeholder">🎮</div>`;
   const infoBlock = `<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div>`;
