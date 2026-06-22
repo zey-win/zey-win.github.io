@@ -83,7 +83,8 @@ const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack
 const ICON_OVERRIDES = {
   "zey-win/plinko@main": "repo-icons/zey-win__plinko.png",
   "zey-win/baccarat-tiger@main": "repo-icons/zey-win__baccarat-tiger.png",
-  "zey-win/wheel-of-fortune@main": "repo-icons/zey-win__wheel-of-fortune.png"
+  "zey-win/wheel-of-fortune@main": "repo-icons/zey-win__wheel-of-fortune.png",
+  "zey-win/roulette@main": "repo-icons/zey-win__roulette.png"
 };
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
