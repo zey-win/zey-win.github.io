@@ -87,6 +87,30 @@ function findDownloads(pkg) {
   }
   return { apk: null, aab: null };
 }
+async function loadArtifactVersions() {
+  const pkgs = new Set();
+  for (const r of runs) {
+    if (r.conclusion === "success" && !runMeta[r.id]?.ver) {
+      const { pkg } = parseTitle(r.displayTitle || r.name || "");
+      if (pkg) pkgs.add(pkg);
+    }
+  }
+  for (const pkg of pkgs) {
+    try {
+      const res = await fetch(`${apiBase}/api/artifacts?package_name=${encodeURIComponent(pkg)}`);
+      if (!res.ok) continue;
+      const d = await res.json();
+      if (d.versionName || d.versionCode) {
+        const run = runs.find(r => { const { pkg: rp } = parseTitle(r.displayTitle || r.name || ""); return rp === pkg; });
+        if (run) {
+          if (!runMeta[run.id]) runMeta[run.id] = {};
+          if (d.versionName) runMeta[run.id].ver = d.versionName;
+          if (d.versionCode) runMeta[run.id].code = d.versionCode;
+        }
+      }
+    } catch {}
+  }
+}
 
 function resolveIcon(r) {
   const meta = runMeta[r.id];
@@ -232,6 +256,7 @@ async function loadBuilds() {
       }
     }
     renderAll();
+    loadArtifactVersions().then(() => renderAll());
   } catch(e) { console.error(e); } finally { if (loading) loading.style.display = "none"; }
 }
 
