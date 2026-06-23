@@ -130,11 +130,11 @@ function buildCardHTML(r, idx) {
   const versionInfo = verStr ? `<span class="version-line">v${esc(verStr)} (code ${codeStr})</span>` : "";
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
   let label, cls;
-  if (concl === "success") { label = "✅ Готов"; cls = "status-success"; }
-  else if (concl === "failure") { label = "❌ Ошибка"; cls = "status-failure"; }
-  else if (["waiting","queued","pending"].includes(st)) { label = "⏳ В очереди"; cls = "status-pending"; }
-  else if (st === "completed") { label = "❌ Ошибка"; cls = "status-failure"; }
-  else { label = "🔄 " + st; cls = "status-pending"; }
+  if (concl === "success") { label = "✅<span class='lt'> Готов</span>"; cls = "status-success"; }
+  else if (concl === "failure") { label = "❌<span class='lt'> Ошибка</span>"; cls = "status-failure"; }
+  else if (["waiting","queued","pending"].includes(st)) { label = "⏳<span class='lt'> В очереди</span>"; cls = "status-pending"; }
+  else if (st === "completed") { label = "❌<span class='lt'> Ошибка</span>"; cls = "status-failure"; }
+  else { label = "🔄<span class='lt'> "+st+"</span>"; cls = "status-pending"; }
   const isProgress = ["in_progress","pending","queued","waiting"].includes(st);
   const bgStyle = idx % 2 === 0 ? 'background:#1a202c' : 'background:#161b22';
   const iconBlock = iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="" loading="lazy" onerror="this.onerror=null;this.alt='🎮'">` : `<div class="card-icon card-icon-placeholder">🎮</div>`;
