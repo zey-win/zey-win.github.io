@@ -390,6 +390,11 @@ function showAdmobFields() {
   document.querySelectorAll(".admob-field").forEach(el => el.classList.add("show"));
 }
 
+// ----- Package name reveals extra fields -----
+$("f-pkg").addEventListener("input", function() {
+  if (this.value) document.querySelectorAll(".pkg-hidden").forEach(el => el.classList.add("show"));
+});
+
 // ----- all-txt-paste: parse entire data block into app_name field -----
 $("f-app-name").addEventListener("paste", e => {
   const text = (e.clipboardData || window.clipboardData).getData("text").trim();
