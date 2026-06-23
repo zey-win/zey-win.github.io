@@ -17,7 +17,7 @@ const iconFile = $("icon-file");
 const firebaseFile = $("firebase-file");
 const loading = $("loading");
 
-const BRANCHES = { "zey-win/plinko": [{ ref: "app/plinko", label: "Plinko" }] };
+const BRANCHES = { "zey-win/plinko": [{ ref: "main", label: "Plinko" }] };
 const DEFAULT_BRANCHES = [{ ref: "main", label: "main" }];
 const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette", "zey-win/dragon-tiger": "dragon tiger", "zey-win/baccarat-tiger": "baccarat", "zey-win/wheel-of-fortune": "lucky wheel", "zey-win/Unstopable": "unstopable", "zey-win/SlotSpot": "slotspot" };
 const REPO_ICONS = {
