@@ -194,7 +194,18 @@ async function loadBuilds() {
         const m = title.match(/builder-([a-z0-9]+)/);
         if (m) icon = `https://raw.githubusercontent.com/zey-win/ci-cd/main/builds/icons/${m[0]}.png`;
       }
-      if (icon && !runMeta[r.id]) runMeta[r.id] = { icon };
+      if (!runMeta[r.id]) runMeta[r.id] = {};
+      if (icon) runMeta[r.id].icon = icon;
+    }
+    try {
+      const sv = JSON.parse(localStorage.getItem('rv')||'{}');
+      for (const [id, v] of Object.entries(sv)) {
+        const rid = parseInt(id);
+        if (!runMeta[rid]) runMeta[rid] = {};
+        if (v.ver) runMeta[rid].ver = v.ver;
+        if (v.code) runMeta[rid].code = v.code;
+      }
+    } catch {}
     }
     for (const r of runs) {
       if (r.status !== "completed" && !timers[r.id]) {
@@ -221,6 +232,7 @@ async function deleteRun(runId, e) {
     runs = runs.filter(r => r.id !== runId);
     delete runMeta[runId];
     delete timers[runId];
+    try { const sv = JSON.parse(localStorage.getItem('rv')||'{}'); delete sv[runId]; localStorage.setItem('rv',JSON.stringify(sv)); } catch {}
     renderAll();
   } catch (err) { alert("Ошибка удаления: " + err.message); }
   finally { if (btn) btn.disabled = false; }
@@ -313,6 +325,7 @@ form.addEventListener("submit", async e => {
       const serverIconPath = d.icon?.path;
       const serverIconUrl = serverIconPath ? `https://raw.githubusercontent.com/zey-win/ci-cd/main/${serverIconPath}` : (d.icon?.htmlUrl || null);
       runMeta[d.run.id] = { icon: serverIconUrl || null, ver: p.version_name || "", code: p.version_code || "" };
+      try { const sv = JSON.parse(localStorage.getItem('rv')||'{}'); sv[d.run.id]={ver:p.version_name||'',code:p.version_code||''}; localStorage.setItem('rv',JSON.stringify(sv)); } catch {}
       timers[d.run.id] = { start: Date.now(), total: (39 + (d.run.id % 12)) * 60 * 1000 };
       runs = [d.run, ...runs];
       renderAll();
