@@ -460,18 +460,20 @@ $("f-app-name").addEventListener("paste", e => {
 const stopTimerLoop = startTimerLoop();
 renderSkeletons();
 
-function scheduleGlow() {
-  const delay = 10000 + Math.random() * 20000;
+function breatheGlow() {
+  const mf = document.querySelector("#modal form");
+  if (!mf || modal.classList.contains("hidden")) return;
+  mf.classList.add("glow");
+  const hold = 3000 + Math.random() * 3000;
   setTimeout(() => {
-    const mf = document.querySelector("#modal form");
-    if (mf && !modal.classList.contains("hidden")) {
-      mf.classList.add("glow");
-      setTimeout(() => mf.classList.remove("glow"), 5000);
-    }
-    scheduleGlow();
-  }, delay);
+    if (modal.classList.contains("hidden")) { mf.classList.remove("glow"); return; }
+    mf.classList.remove("glow");
+    const pause = 3000 + Math.random() * 7000;
+    setTimeout(breatheGlow, pause + 1500);
+  }, hold);
 }
-scheduleGlow();
+newBuildBtn.addEventListener("click", () => setTimeout(breatheGlow, 500));
+cancelBtn.addEventListener("click", () => { const mf = document.querySelector("#modal form"); if(mf) mf.classList.remove("glow"); });
 
 (async () => {
   await loadReleases();
