@@ -77,6 +77,20 @@ const runMeta = {}, releases = [], timers = {};
 let currentIconDataUrl = null;
 
 const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette", "zey-win/dragon-tiger": "dragon tiger", "zey-win/baccarat-tiger": "baccarat", "zey-win/wheel-of-fortune": "lucky wheel", "zey-win/Unstopable": "unstopable", "zey-win/SlotSpot": "slotspot" };
+const REPO_ICONS = {
+  "zey-win/plinko": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__plinko.png",
+  "zey-win/plinko@app/plinko-real-money": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__plinkorm.png",
+  "zey-win/plinko@app/plinko": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__plinko.png",
+  "zey-win/plinko@main": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__plinko.png",
+  "zey-win/blackjack": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__blackjack.png",
+  "zey-win/roulette": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__roulette.png",
+  "zey-win/dragon-tiger": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__dragon-tiger.png",
+  "zey-win/baccarat-tiger": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__baccarat-tiger.png",
+  "zey-win/wheel-of-fortune": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__wheel-of-fortune.png",
+  "zey-win/Unstopable": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__Unstopable.png",
+  "zey-win/SlotSpot": "https://zey-wingithubio.vercel.app/repo-icons/zey-win__SlotSpot.png"
+};
+function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
 function parseTitle(title) { if (!title) return { app: "Build", pkg: "" }; const parts = title.replace(/^Android:\s*/i, "").split(" / ").map(p => p.trim()); return { app: parts[0] || "Build", pkg: parts[1] || "" }; }
 
 async function loadReleases() {
@@ -181,6 +195,17 @@ function card(r, idx) {
   const raw = r.displayTitle || r.name || ""; const { app, pkg } = parseTitle(raw); const concl = r.conclusion || ""; const st = r.status || "unknown"; const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : ""; const url = r.htmlUrl || "#";
   const meta = runMeta[r.id];
   let iconUrl = meta?.icon || null;
+  if (!iconUrl) {
+    const repo = repoFromTitle(raw);
+    const appLower = (app || "").toLowerCase();
+    iconUrl = REPO_ICONS[repo] || null;
+    if (repo === "zey-win/plinko") {
+      if (appLower.includes("real money")) iconUrl = REPO_ICONS["zey-win/plinko@app/plinko-real-money"] || iconUrl;
+      else if (appLower.includes("real game")) iconUrl = REPO_ICONS["zey-win/plinko@app/plinko"] || iconUrl;
+      else if (appLower.includes("plinko") && !appLower.includes("falling")) iconUrl = REPO_ICONS["zey-win/plinko@app/plinko"] || iconUrl;
+      else iconUrl = REPO_ICONS["zey-win/plinko@main"] || iconUrl;
+    }
+  }
 
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
   let label, cls;
