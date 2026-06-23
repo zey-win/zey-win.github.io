@@ -21,7 +21,6 @@
 
 <div id="modal" class="hidden">
 <form id="build-form">
-<div class="form-row">
 <label>Игра
 <select name="game_repository" id="repo-select">
 <option value="zey-win/plinko">Plinko</option>
@@ -38,7 +37,6 @@
 <select name="game_ref" id="branch-select">
 </select>
 </label>
-</div>
 
 <div id="icon-row" class="fade-in">
 <div id="icon-wrapper" style="width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center">
@@ -51,17 +49,8 @@
 </label>
 </div>
 
-<div id="name-fields" class="fade-in-delayed">
-<div style="display:flex;gap:4px;align-items:flex-end">
-<label style="flex:1">Название приложения <input name="app_name" placeholder="Plinko Real Money"></label>
-<button type="button" id="z-btn" title="Заполнить из репозитория" style="height:36px;padding:4px 10px;background:#21262d;color:#58a6ff;border-radius:4px;border:1px solid #30363d;font-weight:600">Z</button>
-</div>
-<label>Package name <input name="package_name" placeholder="com.playsocialgames.plinkofun"></label>
-</div>
-
-<details id="advanced-section">
-<summary>Параметры сборки (опционально)</summary>
-<div class="params-grid">
+<label>Название приложения <input name="app_name" id="f-app-name"></label>
+<label>Package name <input name="package_name"></label>
 <label>Формат <select name="build_format">
 <option value="apk">APK</option>
 <option value="aab">AAB</option>
@@ -71,20 +60,30 @@
 <option value="false">ARMv7 + ARM64 (32+64 бит)</option>
 <option value="true">ARM64 (быстрее, меньше APK)</option>
 </select></label>
-<label>Версия <input name="version_name" placeholder="1"></label>
-<label>Version Code <input name="version_code" placeholder="1" type="number"></label>
-<label>ZeyWin API Key <input name="zeywin_api_key" placeholder="zw_..."></label>
-<label>AdMob App ID <input name="admob_app_id" placeholder="ca-app-pub-...~..."></label>
-<label>AdMob Banner <input name="admob_banner" placeholder="ca-app-pub-.../..."></label>
-<label>AdMob Interstitial <input name="admob_interstitial" placeholder="ca-app-pub-.../..."></label>
-<label>AdMob Rewarded <input name="admob_rewarded" placeholder="ca-app-pub-.../..."></label>
+<label>Версия
+<div style="display:flex;gap:4px;align-items:center">
+<input name="version_name" id="f-version" type="number" step="0.1" value="1" style="flex:1">
+<button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="1">+</button>
+<button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="-1">−</button>
+</div>
+</label>
+<label>Version Code
+<div style="display:flex;gap:4px;align-items:center">
+<input name="version_code" id="f-vcode" type="number" step="1" value="1" style="flex:1">
+<button type="button" class="step-btn" data-target="f-vcode" data-step="1" data-dir="1">+</button>
+<button type="button" class="step-btn" data-target="f-vcode" data-step="1" data-dir="-1">−</button>
+</div>
+</label>
+<label>ZeyWin API Key <input name="zeywin_api_key"></label>
+<label>AdMob App ID <input name="admob_app_id" id="f-admob-app"></label>
+<label>AdMob Banner <input name="admob_banner"></label>
+<label>AdMob Interstitial <input name="admob_interstitial"></label>
+<label>AdMob Rewarded <input name="admob_rewarded"></label>
 <label class="file-label">google-services.json
 <input type="file" id="firebase-file" accept=".json" style="display:none">
 <span class="file-btn" id="firebase-btn">📁 Выбрать файл</span>
 <span id="firebase-status" style="font-size:11px;color:#3fb950;display:none"></span>
 </label>
-</div>
-</details>
 
 <div class="modal-actions">
 <button type="button" id="modal-cancel">Отмена</button>

@@ -16,18 +16,6 @@ const iconSpinner = $("icon-spinner");
 const iconFile = $("icon-file");
 const firebaseFile = $("firebase-file");
 const loading = $("loading");
-const zBtn = $("z-btn");
-
-const REPO_DEFAULTS = {};
-function getDef(repo) { return REPO_DEFAULTS[repo] || {}; }
-REPO_DEFAULTS["zey-win/plinko"] = { app_name: "Plinko Real Money", package_name: "com.socialapps.plinko", admob_android_app_id: "ca-app-pub-1585565865476548~5854522209", admob_android_banner_id: "ca-app-pub-1585565865476548/2893595529", admob_android_interstitial_id: "ca-app-pub-1585565865476548/2521834122", admob_android_rewarded_id: "ca-app-pub-1585565865476548/7091315351", zeywin_api_key: "zw_7b07dc24806408f6e655dcf0422e15c5e028d40d440b3e1a", firebase_url: "https://raw.githubusercontent.com/zey-win/plinko/main/Assets/Plugins/Android/google-services.json" };
-REPO_DEFAULTS["zey-win/blackjack"] = { app_name: "Blackjack", package_name: "com.playmaxsolutions.blackjack" };
-REPO_DEFAULTS["zey-win/roulette"] = { app_name: "Roulette", package_name: "com.playmaxsolutions.roulette" };
-REPO_DEFAULTS["zey-win/dragon-tiger"] = { app_name: "Dragon Tiger", package_name: "com.playmaxsolutions.dragontiger" };
-REPO_DEFAULTS["zey-win/baccarat-tiger"] = { app_name: "Baccarat", package_name: "com.playmaxsolutions.baccarattiger" };
-REPO_DEFAULTS["zey-win/wheel-of-fortune"] = { app_name: "Wheel of Fortune", package_name: "com.playmaxsolutions.wheeloffortune" };
-REPO_DEFAULTS["zey-win/Unstopable"] = { app_name: "Unstopable: Real Money", package_name: "com.playmaxsolutions.unstopable" };
-REPO_DEFAULTS["zey-win/SlotSpot"] = { app_name: "SlotSpot", package_name: "com.playmaxsolutions.slotspot" };
 
 const BRANCHES = { "zey-win/plinko": [{ ref: "main", label: "Plinko Falling" }, { ref: "app/plinko", label: "Plinko" }, { ref: "app/plinko-real-game", label: "Plinko Real Game" }, { ref: "app/plinko-real-money", label: "Plinko Real Money" }] };
 const DEFAULT_BRANCHES = [{ ref: "main", label: "main" }];
@@ -274,36 +262,6 @@ function updateBranches() {
   getIconDataUrl(repo, branchSelect.value);
 }
 
-zBtn.addEventListener("click", async () => {
-  const repo = repoSelect.value; const def = getDef(repo);
-  const fbStatus = document.getElementById("firebase-status");
-  const fbBtn = document.getElementById("firebase-btn");
-  document.querySelector('[name="app_name"]').value = def.app_name || "";
-  document.querySelector('[name="package_name"]').value = def.package_name || "";
-  document.querySelector('[name="zeywin_api_key"]').value = def.zeywin_api_key || "";
-  document.querySelector('[name="admob_app_id"]').value = def.admob_android_app_id || "";
-  document.querySelector('[name="admob_banner"]').value = def.admob_android_banner_id || "";
-  document.querySelector('[name="admob_interstitial"]').value = def.admob_android_interstitial_id || "";
-  document.querySelector('[name="admob_rewarded"]').value = def.admob_android_rewarded_id || "";
-  const pkg = document.querySelector('[name="package_name"]').value || def.package_name || "";
-  if (fbStatus) { fbStatus.textContent = "⏳ firebase..."; fbStatus.style.display = "inline"; }
-  try {
-    const fbUrl = `/firebase-cfg/${encodeURIComponent(pkg)}.json`;
-    let res = await fetch(fbUrl);
-    if (!res.ok && def.firebase_url) res = await fetch(def.firebase_url);
-    if (res.ok) {
-      const text = await res.text();
-      firebaseJson = `data:application/json;base64,${btoa(text)}`;
-      if (fbStatus) fbStatus.textContent = "✅ firebase загружен";
-      if (fbBtn) fbBtn.textContent = "📁 Заменить файл";
-    } else {
-      if (fbStatus) { fbStatus.textContent = "❌ firebase не найден"; fbStatus.style.color = "#f85149"; }
-    }
-  } catch {
-    if (fbStatus) { fbStatus.textContent = "❌ ошибка"; fbStatus.style.color = "#f85149"; }
-  }
-});
-
 iconFile.addEventListener("change", e => {
   const f = e.target.files[0]; if (!f) return;
   if (f.type !== "image/png") { alert("Только PNG"); return; }
@@ -384,20 +342,79 @@ form.addEventListener("submit", async e => {
   } catch (err) { alert("Ошибка: " + err.message); }
 });
 
-// ----- Clipboard for modal inputs -----
-const clipboardExceptedInputs = new Set(["app_name"]);
-function setupClipboardInput(el) {
-  if (!el || clipboardExceptedInputs.has(el.name)) return;
-  let pasted = false;
-  el.addEventListener("focus", () => {
-    if (pasted) return;
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.readText().then(t => { if (t && !el.value) { el.value = t; pasted = true; } }).catch(() => {});
-    } else pasted = true;
-  });
-  el.addEventListener("blur", () => { pasted = false; });
-}
-document.querySelectorAll("#build-form input").forEach(setupClipboardInput);
+// ----- Step buttons -----
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".step-btn");
+  if (!btn) return;
+  const el = document.getElementById(btn.dataset.target);
+  if (!el) return;
+  const step = parseFloat(btn.dataset.step) || 1;
+  const dir = parseInt(btn.dataset.dir) || 1;
+  const cur = parseFloat(el.value) || 0;
+  const nxt = Math.round((cur + dir * step) * 100) / 100;
+  el.value = nxt < 0 ? 0 : nxt;
+});
+
+// ----- AdMob auto-split on paste -----
+$("f-admob-app").addEventListener("paste", e => {
+  const text = (e.clipboardData || window.clipboardData).getData("text");
+  const ids = text.split(/[\n\t,;]+/).map(s => s.trim()).filter(Boolean);
+  if (ids.length >= 4) {
+    e.preventDefault();
+    document.querySelector('[name="admob_app_id"]').value = ids[0];
+    document.querySelector('[name="admob_banner"]').value = ids[1];
+    document.querySelector('[name="admob_interstitial"]').value = ids[2];
+    document.querySelector('[name="admob_rewarded"]').value = ids[3];
+  }
+});
+
+// ----- all-txt-paste: parse entire data block into app_name field -----
+$("f-app-name").addEventListener("paste", e => {
+  const text = (e.clipboardData || window.clipboardData).getData("text").trim();
+  if (!text) return;
+  const map = {
+    app_name: ["app", "name", "название", "имя", "title"],
+    package_name: ["package", "pkg", "code", "bundle", "com."],
+    version_name: ["version", "верс", "v"],
+    version_code: ["code", "version code", "код"],
+    zeywin_api_key: ["zeywin", "key", "api key", "zw_"],
+    admob_app_id: ["admob app", "admob id", "ca-app-pub-...~"],
+    admob_banner: ["banner"],
+    admob_interstitial: ["interstitial", "inter"],
+    admob_rewarded: ["rewarded", "reward"]
+  };
+
+  // Try JSON first
+  try {
+    const json = JSON.parse(text);
+    const fields = document.querySelectorAll("#build-form input, #build-form select");
+    for (const field of fields) {
+      const name = field.name;
+      if (json[name] !== undefined) field.value = json[name];
+    }
+    return;
+  } catch {}
+
+  // Try key: value lines
+  const lines = text.split("\n").filter(l => l.includes(":") || l.includes("="));
+  if (lines.length < 2) return;
+  e.preventDefault();
+  for (const line of lines) {
+    const sep = line.includes("=") ? "=" : ":";
+    const idx = line.indexOf(sep);
+    if (idx < 0) continue;
+    let key = line.slice(0, idx).trim().toLowerCase();
+    let val = line.slice(idx + 1).trim();
+    // find matching field
+    for (const [fieldName, aliases] of Object.entries(map)) {
+      if (aliases.some(a => key.includes(a))) {
+        const el = document.querySelector(`[name="${fieldName}"]`);
+        if (el) el.value = val;
+        break;
+      }
+    }
+  }
+});
 
 // ----- Startup -----
 const stopTimerLoop = startTimerLoop();
