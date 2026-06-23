@@ -369,7 +369,7 @@ document.addEventListener("click", e => {
   el.value = nxt < 0 ? 0 : nxt;
 });
 
-// ----- AdMob auto-split on paste -----
+// ----- AdMob auto-split on paste + reveal hidden fields -----
 $("f-admob-app").addEventListener("paste", e => {
   const text = (e.clipboardData || window.clipboardData).getData("text");
   const ids = text.split(/[\n\t,;]+/).map(s => s.trim()).filter(Boolean);
@@ -380,7 +380,15 @@ $("f-admob-app").addEventListener("paste", e => {
     document.querySelector('[name="admob_interstitial"]').value = ids[2];
     document.querySelector('[name="admob_rewarded"]').value = ids[3];
   }
+  showAdmobFields();
 });
+$("f-admob-app").addEventListener("input", () => {
+  if ($("f-admob-app").value) showAdmobFields();
+});
+
+function showAdmobFields() {
+  document.querySelectorAll(".admob-field").forEach(el => el.classList.add("show"));
+}
 
 // ----- all-txt-paste: parse entire data block into app_name field -----
 $("f-app-name").addEventListener("paste", e => {
