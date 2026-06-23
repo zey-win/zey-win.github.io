@@ -17,7 +17,6 @@ const firebaseFile = $("firebase-file");
 const loading = $("loading");
 const zBtn = $("z-btn");
 
-const iconCache = new Map();
 const REPO_DEFAULTS = {};
 function getDef(repo) { return REPO_DEFAULTS[repo] || {}; }
 REPO_DEFAULTS["zey-win/plinko"] = { app_name: "Plinko Real Money", package_name: "com.socialapps.plinko", admob_android_app_id: "ca-app-pub-1585565865476548~5854522209", admob_android_banner_id: "ca-app-pub-1585565865476548/2893595529", admob_android_interstitial_id: "ca-app-pub-1585565865476548/2521834122", admob_android_rewarded_id: "ca-app-pub-1585565865476548/7091315351", zeywin_api_key: "zw_7b07dc24806408f6e655dcf0422e15c5e028d40d440b3e1a", firebase_url: "https://raw.githubusercontent.com/zey-win/plinko/main/Assets/Plugins/Android/google-services.json" };
@@ -34,14 +33,12 @@ function hideIconSpinner() { iconSpinner.style.display = "none"; }
 function setIcon(src) { if (src) { gameIcon.src = src; gameIcon.style.display = "block"; } else gameIcon.style.display = "none"; hideIconSpinner(); }
 
 async function getIconDataUrl(repo, ref) {
-  const refStr = ref || "main"; const key = `${repo}@${refStr}`;
-  const cached = iconCache.get(key); if (cached) { setIcon(cached); return cached; }
-  showIconSpinner();
+  const refStr = ref || "main"; showIconSpinner();
   try {
     const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(refStr)}`, { headers: op() });
     if (!res.ok) { setIcon(null); return null; }
     const d = await res.json();
-    if (d.ok && d.icon?.dataUrl) { iconCache.set(key, d.icon.dataUrl); setIcon(d.icon.dataUrl); return d.icon.dataUrl; }
+    if (d.ok && d.icon?.dataUrl) { setIcon(d.icon.dataUrl); return d.icon.dataUrl; }
     setIcon(null); return null;
   } catch { setIcon(null); return null; }
 }
@@ -76,18 +73,10 @@ const DEFAULT_BRANCHES = [{ ref: "main", label: "main" }];
 function updateBranches() { const repo = repoSelect.value; const list = BRANCHES[repo] || DEFAULT_BRANCHES; branchSelect.innerHTML = list.map(b => `<option value="${b.ref}">${b.label}</option>`).join(""); getIconDataUrl(repo, branchSelect.value); }
 
 let runs = [], firebaseJson = null;
-const runMeta = {}, icons = {}, releases = [], timers = {};
-let currentIconDataUrl = null; // the icon dataUrl currently shown in modal
+const runMeta = {}, releases = [], timers = {};
+let currentIconDataUrl = null;
 
 const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette", "zey-win/dragon-tiger": "dragon tiger", "zey-win/baccarat-tiger": "baccarat", "zey-win/wheel-of-fortune": "lucky wheel", "zey-win/Unstopable": "unstopable", "zey-win/SlotSpot": "slotspot" };
-const ICON_OVERRIDES = {
-  "zey-win/plinko@main": "repo-icons/zey-win__plinko.png",
-  "zey-win/baccarat-tiger@main": "repo-icons/zey-win__baccarat-tiger.png",
-  "zey-win/wheel-of-fortune@main": "repo-icons/zey-win__wheel-of-fortune.png",
-  "zey-win/roulette@main": "repo-icons/zey-win__roulette.png"
-};
-
-function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
 function parseTitle(title) { if (!title) return { app: "Build", pkg: "" }; const parts = title.replace(/^Android:\s*/i, "").split(" / ").map(p => p.trim()); return { app: parts[0] || "Build", pkg: parts[1] || "" }; }
 
 async function loadReleases() {
@@ -131,12 +120,6 @@ modal.addEventListener("click", e => { if (e.target === modal) modal.classList.a
 
 form.addEventListener("submit", async e => {
   e.preventDefault(); const fd = new FormData(form);
-  // Ensure currentIconDataUrl is set from cache or API
-  if (!currentIconDataUrl) {
-    const key = `${fd.get("game_repository") || "zey-win/plinko"}@${fd.get("game_ref") || "main"}`;
-    currentIconDataUrl = iconCache.get(key) || null;
-  }
-  // If still no icon, try fetching
   if (!currentIconDataUrl && iconLoadedDeferred) {
     try { const url = await iconLoadedDeferred; if (url) currentIconDataUrl = url; } catch {}
   }
@@ -147,11 +130,10 @@ form.addEventListener("submit", async e => {
     const res = await fetch(`${apiBase}/api/build`, { method: "POST", headers: op(), body: JSON.stringify(p) });
     if (!res.ok) { alert("Error: " + await res.text().catch(() => "")); return; }
     const d = await res.json();
-    const cacheKey = `${p.game_repository}@${p.game_ref}`;
-    if (currentIconDataUrl) iconCache.set(cacheKey, currentIconDataUrl);
     if (d.run) {
-      const iconForBuild = currentIconDataUrl || iconCache.get(cacheKey) || null;
-      if (iconForBuild) runMeta[d.run.id] = { icon: iconForBuild, ver: p.version_name || "", code: p.version_code || "" };
+      const serverIconPath = d.icon?.path;
+      const serverIconUrl = serverIconPath ? `https://raw.githubusercontent.com/zey-win/ci-cd/main/${serverIconPath}` : (d.icon?.htmlUrl || null);
+      if (serverIconUrl) runMeta[d.run.id] = { icon: serverIconUrl, ver: p.version_name || "", code: p.version_code || "" };
       timers[d.run.id] = { start: Date.now(), total: (39 + (d.run.id % 12)) * 60 * 1000 };
       runs = [d.run, ...runs]; renderAll();
     } else loadBuilds();
@@ -165,6 +147,11 @@ async function loadBuilds() {
     const [runsRes] = await Promise.all([fetch(`${apiBase}/api/runs`), loadReleases()]);
     if (!runsRes.ok) { buildsContainer.innerHTML = "<p>No builds</p>"; return; }
     const d = await runsRes.json(); const oldRuns = runs; runs = Array.isArray(d.runs) ? d.runs : [];
+    for (const r of runs) {
+      if (r.iconUrl && !runMeta[r.id]) {
+        runMeta[r.id] = { icon: r.iconUrl };
+      }
+    }
     // Ensure timer for all active builds (restore after page reload)
     for (const r of runs) {
       if (r.status !== "completed" && !timers[r.id]) {
@@ -174,7 +161,7 @@ async function loadBuilds() {
     }
     for (const r of runs) { const old = oldRuns.find(o => o.id === r.id); if (old && old.status !== "completed" && r.status === "completed") { if (r.conclusion === "success") { playFanfare(); fireConfetti(4000); } else { playErrorSound(); } } }
     renderAll();
-  } catch { buildsContainer.innerHTML = "<p>Load error</p>"; } finally { if (loading) loading.style.display = "none"; }
+  } catch { loading.style.display = "none"; }
 }
 
 async function deleteRun(runId, e) { if (!confirm("Delete this build?")) return; const btn = e?.target; if (btn) btn.disabled = true; try { await fetch(`${apiBase}/api/delete`, { method: "POST", headers: op(), body: JSON.stringify({ run_id: runId }) }); runs = runs.filter(r => r.id !== runId); renderAll(); } catch (err) { alert("Delete error: " + err.message); } finally { if (btn) btn.disabled = false; } }
@@ -187,19 +174,9 @@ function renderAll() {
 }
 
 function card(r, idx) {
-  const raw = r.displayTitle || r.name || ""; const { app, pkg } = parseTitle(raw); const concl = r.conclusion || ""; const st = r.status || "unknown"; const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : ""; const url = r.htmlUrl || "#"; const repo = repoFromTitle(raw);
-  const appLower = (app || "").toLowerCase();
-  let iconKey = null;
-  if (repo === "zey-win/plinko" && appLower.includes("real money")) iconKey = "zey-win/plinko@app/plinko-real-money";
-  else if (repo === "zey-win/plinko" && appLower.includes("real game")) iconKey = "zey-win/plinko@app/plinko-real-game";
-  else if (repo === "zey-win/plinko" && appLower.includes("plinko") && !appLower.includes("falling") && !appLower.includes("real")) iconKey = "zey-win/plinko@app/plinko";
-  else if (repo === "zey-win/plinko" && appLower.includes("falling")) iconKey = "zey-win/plinko@main";
-  else iconKey = `${repo}@main`;
+  const raw = r.displayTitle || r.name || ""; const { app, pkg } = parseTitle(raw); const concl = r.conclusion || ""; const st = r.status || "unknown"; const created = r.createdAt ? new Date(r.createdAt).toLocaleString() : ""; const url = r.htmlUrl || "#";
   const meta = runMeta[r.id];
-  let iconUrl = null;
-  if (meta && meta.icon) iconUrl = meta.icon;
-  else if (iconKey) iconUrl = iconCache.get(iconKey) || null;
-  if (!iconUrl && repo) iconUrl = icons[repo] || null;
+  let iconUrl = meta?.icon || null;
 
   const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
   let label, cls;
@@ -246,33 +223,6 @@ function setupClipboardInput(el) {
 document.querySelectorAll("#build-form input").forEach(setupClipboardInput);
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
-async function applyIconOverrides() {
-  for (const [key, url] of Object.entries(ICON_OVERRIDES)) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) continue;
-      const blob = await res.blob();
-      const reader = new FileReader();
-      const dataUrl = await new Promise(resolve => { reader.onload = () => resolve(reader.result); reader.readAsDataURL(blob); });
-      if (dataUrl) {
-        iconCache.set(key, dataUrl);
-        const repo = key.split("@")[0];
-        icons[repo] = dataUrl;
-      }
-    } catch {}
-  }
-}
-
-async function preloadIcons() {
-  const repos = Object.keys(REPO_NAMES);
-  const allBranches = [...new Set(repos.flatMap(r => { const b = BRANCHES[r]; if (b) return b.map(bi => `${r}@${bi.ref}`); return [`${r}@main`]; }))];
-  await Promise.all(allBranches.map(async key => {
-    if (iconCache.has(key)) return;
-    const [repo, ref] = key.split("@"); if (!repo || !ref) return;
-    try { const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(ref)}`, { headers: op() }); if (!res.ok) return; const d = await res.json(); if (d.ok && d.icon && d.icon.dataUrl) { iconCache.set(key, d.icon.dataUrl); if (!icons[repo]) icons[repo] = d.icon.dataUrl; } } catch {}
-  }));
-}
-
 setInterval(() => { const active = runs.filter(r => r.status !== "completed"); if (active.some(r => timers[r.id])) renderAll(); }, 50);
 
-(async () => { await applyIconOverrides(); await preloadIcons(); await loadReleases(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
+(async () => { await loadReleases(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
