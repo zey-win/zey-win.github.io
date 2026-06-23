@@ -152,7 +152,7 @@ async function loadBuilds() {
       if (!icon) {
         const title = `${r.displayTitle || ""} ${r.name || ""}`;
         const m = title.match(/builder-([a-z0-9]+)/);
-        if (m) icon = `https://raw.githubusercontent.com/zey-win/ci-cd/main/builds/icons/${m[1]}.png`;
+        if (m) icon = `https://raw.githubusercontent.com/zey-win/ci-cd/main/builds/icons/${m[0]}.png`;
       }
       if (icon && !runMeta[r.id]) runMeta[r.id] = { icon };
     }
