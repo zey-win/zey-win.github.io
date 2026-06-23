@@ -56,6 +56,11 @@
 </div>
 <div class="format-col">
 <div class="ver-format-row">
+<label style="flex:1">Формат <select name="build_format">
+<option value="apk">APK</option>
+<option value="aab">AAB</option>
+<option value="apk_aab">APK+AAB</option>
+</select></label>
 <label style="flex:1">Версия
 <div style="display:flex;gap:4px;align-items:center">
 <input name="version_name" id="f-version" type="number" step="0.1" value="1" style="flex:1">
@@ -63,11 +68,6 @@
 <button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="-1">−</button>
 </div>
 </label>
-<label style="flex:1">Формат <select name="build_format">
-<option value="apk">APK</option>
-<option value="aab">AAB</option>
-<option value="apk_aab">APK+AAB</option>
-</select></label>
 </div>
 <div class="arch-vc-row">
 <label style="flex:1">bit's <select name="fast_build">
@@ -85,7 +85,7 @@
 </div>
 </div>
 
-<label>Название приложения <input name="app_name" id="f-app-name"></label>
+<label style="margin-top:-25px">Название приложения <input name="app_name" id="f-app-name"></label>
 <label>Package name <input name="package_name"></label>
 <label>ZeyWin API Key <input name="zeywin_api_key"></label>
 <label>AdMob App ID <input name="admob_app_id" id="f-admob-app"></label>
