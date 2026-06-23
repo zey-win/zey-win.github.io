@@ -26,7 +26,7 @@ input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 .admob-field{overflow:hidden;max-height:0;opacity:0;margin:0;padding:0;border:0;pointer-events:none;transition:max-height .5s ease,opacity .5s ease,margin .5s ease,padding .5s ease}
 .admob-field.show{max-height:90px;opacity:1;margin:0 0 12px;padding:0;border:0;pointer-events:auto}
 .form-row{display:flex;gap:12px;margin-bottom:12px}
-.icon-format-row{display:grid;grid-template-columns:auto 1fr;gap:16px;margin-bottom:16px;align-items:start}
+.icon-format-row{display:grid;grid-template-columns:auto 1fr;gap:16px;margin-bottom:16px;align-items:start;margin-top:-30px}
 .icon-col{display:flex;flex-direction:column;align-items:center;gap:0;margin-top:-5px}
 #icon-wrapper{width:72px;height:72px;border-radius:10px;display:flex;align-items:center;justify-content:center}
 .icon-btns{display:flex;flex-direction:column;gap:6px;width:100%}
@@ -35,7 +35,7 @@ input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 .icon-btn-upload:hover{background:#2ea043}
 .icon-btn-gen{background:#1f6feb;color:#fff}
 .icon-btn-gen:hover{background:#388bfd}
-.format-col{display:flex;flex-direction:column;gap:10px;min-width:0;margin-top:-30px}
+.format-col{display:flex;flex-direction:column;gap:10px;min-width:0}
 .ver-format-row{display:flex;gap:10px}
 .arch-vc-row{display:flex;gap:10px}
 @keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
