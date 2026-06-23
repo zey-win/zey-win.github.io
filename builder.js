@@ -47,8 +47,6 @@ const REPO_ICONS = {
 
 let runMeta = {}, releases = [], firebaseJson = null, currentIconDataUrl = null, iconLoadedDeferred = null;
 let runs = [];
-const cardEls = new Map();
-let filterText = "";
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
 function parseTitle(title) { if (!title) return { app: "Build", pkg: "" }; const parts = title.replace(/^Android:\s*/i, "").split(" / ").map(p => p.trim()); return { app: parts[0] || "Build", pkg: parts[1] || "" }; }
@@ -167,24 +165,17 @@ function startTimerLoop() {
 }
 
 function renderAll() {
-  const filtered = runs.filter(r => {
-    if (!filterText) return true;
-    const raw = (r.displayTitle || r.name || "").toLowerCase();
-    return raw.includes(filterText.toLowerCase());
-  });
-  const active = filtered.filter(r => r.status !== "completed");
-  const done = filtered.filter(r => r.status === "completed" && r.conclusion === "success");
-  const fail = filtered.filter(r => r.status === "completed" && r.conclusion !== "success");
+  const active = runs.filter(r => r.status !== "completed");
+  const done = runs.filter(r => r.status === "completed" && r.conclusion === "success");
+  const fail = runs.filter(r => r.status === "completed" && r.conclusion !== "success");
   const allDone = [...done, ...fail].slice(0, 30);
 
   const activeHtml = active.length ? active.map((r, i) => buildCardHTML(r, i)).join("") : "";
   const doneHtml = allDone.length ? allDone.map((r, i) => buildCardHTML(r, i + active.length)).join("") : "";
 
-  let changed = false;
-  if (activeContainer.innerHTML !== activeHtml) { activeContainer.innerHTML = activeHtml; changed = true; }
-  if (buildsContainer.innerHTML !== doneHtml) { buildsContainer.innerHTML = doneHtml; changed = true; }
+  if (activeContainer.innerHTML !== activeHtml) activeContainer.innerHTML = activeHtml;
+  if (buildsContainer.innerHTML !== doneHtml) buildsContainer.innerHTML = doneHtml;
 
-  const count = filtered.length;
   let statsEl = document.getElementById("stats");
   if (!statsEl) {
     statsEl = document.createElement("div");
@@ -192,12 +183,7 @@ function renderAll() {
     statsEl.style.cssText = "text-align:center;color:#8b949e;font-size:13px;padding:8px 0";
     buildsContainer.parentNode.insertBefore(statsEl, buildsContainer);
   }
-  statsEl.textContent = `Всего: ${runs.length} | Показано: ${filtered.length} | Активные: ${active.length} | Успешно: ${done.length} | Ошибок: ${fail.length}`;
-}
-
-function filterCards() {
-  filterText = (document.getElementById("search-input")?.value || "").trim();
-  renderAll();
+  statsEl.textContent = `Всего: ${runs.length} | Активные: ${active.length} | Успешно: ${done.length} | Ошибок: ${fail.length}`;
 }
 
 async function loadBuilds() {
@@ -352,16 +338,6 @@ form.addEventListener("submit", async e => {
     iconLoadedDeferred = null;
   } catch (err) { alert("Ошибка: " + err.message); }
 });
-
-// ----- Search in header -----
-const header = document.querySelector("header");
-const searchInput = document.createElement("input");
-searchInput.id = "search-input";
-searchInput.type = "text";
-searchInput.placeholder = "🔍 Поиск...";
-searchInput.style.cssText = "padding:6px 10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:13px;outline:none;width:180px;flex-shrink:0";
-searchInput.addEventListener("input", () => { filterCards(); });
-header?.appendChild(searchInput);
 
 // ----- Clipboard for modal inputs -----
 const clipboardExceptedInputs = new Set(["app_name"]);
