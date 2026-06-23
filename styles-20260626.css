@@ -35,7 +35,7 @@ input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 .icon-btn-upload:hover{background:#2ea043}
 .icon-btn-gen{background:#1f6feb;color:#fff}
 .icon-btn-gen:hover{background:#388bfd}
-.format-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.format-col{display:flex;flex-direction:column;gap:10px;min-width:0;margin-top:-30px}
 .ver-format-row{display:flex;gap:10px}
 .arch-vc-row{display:flex;gap:10px}
 @keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
