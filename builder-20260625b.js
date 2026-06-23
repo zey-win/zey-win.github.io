@@ -2,8 +2,8 @@ const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.rep
 const operatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const op = (extra = {}) => ({ "Content-Type": "application/json", "x-builder-key": operatorKey, ...extra });
 const $ = id => document.getElementById(id);
-let buildsContainer = $("builds-container") || (() => { const d = document.createElement("div"); d.id = "builds-container"; document.body.appendChild(d); return d; })();
-let activeContainer = $("active-container") || (() => { const d = document.createElement("div"); d.id = "active-container"; document.body.insertBefore(d, buildsContainer); return d; })();
+const buildsContainer = $("builds-container");
+const activeContainer = $("active-container");
 const modal = $("modal");
 const form = $("build-form");
 const newBuildBtn = $("new-build");
