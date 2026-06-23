@@ -447,20 +447,18 @@ $("f-app-name").addEventListener("paste", e => {
 const stopTimerLoop = startTimerLoop();
 renderSkeletons();
 
-function scheduleSnake() {
+function scheduleGlow() {
   const delay = 10000 + Math.random() * 20000;
   setTimeout(() => {
     const mf = document.querySelector("#modal form");
     if (mf && !modal.classList.contains("hidden")) {
-      mf.classList.remove("snake-border");
-      void mf.offsetWidth;
-      mf.classList.add("snake-border");
-      setTimeout(() => mf.classList.remove("snake-border"), 2000);
+      mf.classList.add("glow");
+      setTimeout(() => mf.classList.remove("glow"), 5000);
     }
-    scheduleSnake();
+    scheduleGlow();
   }, delay);
 }
-scheduleSnake();
+scheduleGlow();
 
 (async () => {
   await loadReleases();
