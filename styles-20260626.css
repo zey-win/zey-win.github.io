@@ -42,8 +42,8 @@ input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 .fade-in{animation:fadeSlideUp .5s ease-out}
 .fade-in-delayed{animation:fadeSlideUp .5s ease-out .6s both}
 .spinner-inline{display:inline-flex;align-items:center;width:20px;height:20px}
-.spinner-inline .spinner{width:18px;height:18px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
-.icon-spinner{width:30px;height:30px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
+.spinner-inline .spinner{width:18px;height:18px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .3s linear infinite}
+.icon-spinner{width:30px;height:30px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .3s linear infinite}
 .modal-actions{display:flex;gap:8px;justify-content:space-between;margin-top:16px}
 .modal-actions button{padding:8px 20px}
 .btn-cancel{background:#21262d;color:#8b949e;border:1px solid #30363d}
@@ -71,7 +71,7 @@ input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 .version-line{font-size:12px;color:#8b949e}
 #builds-container,#active-container{padding:0 16px 16px}
 .spinner-overlay{position:fixed;top:24px;right:24px;width:24px;height:24px;pointer-events:none;z-index:10}
-.spinner-overlay .spinner{width:24px;height:24px;border:3px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
+.spinner-overlay .spinner{width:24px;height:24px;border:3px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .3s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .build-card .btn-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .build-card .btn-group a,.dl-btn,.del-btn,.log-btn{padding:8px 14px;border-radius:10px;font-size:14px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4;white-space:nowrap}
