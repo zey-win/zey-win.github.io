@@ -175,13 +175,15 @@ function renderAll() {
 
   if (activeContainer.innerHTML !== activeHtml) activeContainer.innerHTML = activeHtml;
   if (buildsContainer.innerHTML !== doneHtml) buildsContainer.innerHTML = doneHtml;
+  activeContainer.style.display = activeHtml ? "" : "none";
+  buildsContainer.style.display = doneHtml ? "" : "none";
 
   let statsEl = document.getElementById("stats");
   if (!statsEl) {
     statsEl = document.createElement("div");
     statsEl.id = "stats";
     statsEl.style.cssText = "text-align:center;color:#8b949e;font-size:13px;padding:8px 0";
-    buildsContainer.parentNode.insertBefore(statsEl, buildsContainer);
+    buildsContainer.appendChild(statsEl);
   }
   statsEl.textContent = `Всего: ${runs.length} | Активные: ${active.length} | Успешно: ${done.length} | Ошибок: ${fail.length}`;
 }
