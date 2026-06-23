@@ -246,15 +246,6 @@ function setupClipboardInput(el) {
 document.querySelectorAll("#build-form input").forEach(setupClipboardInput);
 function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
 
-async function preloadIcons() {
-  const repos = Object.keys(REPO_NAMES);
-  const allBranches = [...new Set(repos.flatMap(r => { const b = BRANCHES[r]; if (b) return b.map(bi => `${r}@${bi.ref}`); return [`${r}@main`]; }))];
-  await Promise.all(allBranches.map(async key => {
-    const [repo, ref] = key.split("@"); if (!repo || !ref) return;
-    try { const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(ref)}`, { headers: op() }); if (!res.ok) return; const d = await res.json(); if (d.ok && d.icon && d.icon.dataUrl) { iconCache.set(key, d.icon.dataUrl); icons[repo] = d.icon.dataUrl; } } catch {}
-  }));
-}
-
 async function applyIconOverrides() {
   for (const [key, url] of Object.entries(ICON_OVERRIDES)) {
     try {
@@ -272,6 +263,16 @@ async function applyIconOverrides() {
   }
 }
 
+async function preloadIcons() {
+  const repos = Object.keys(REPO_NAMES);
+  const allBranches = [...new Set(repos.flatMap(r => { const b = BRANCHES[r]; if (b) return b.map(bi => `${r}@${bi.ref}`); return [`${r}@main`]; }))];
+  await Promise.all(allBranches.map(async key => {
+    if (iconCache.has(key)) return;
+    const [repo, ref] = key.split("@"); if (!repo || !ref) return;
+    try { const res = await fetch(`${apiBase}/api/icon?game_repository=${encodeURIComponent(repo)}&game_ref=${encodeURIComponent(ref)}`, { headers: op() }); if (!res.ok) return; const d = await res.json(); if (d.ok && d.icon && d.icon.dataUrl) { iconCache.set(key, d.icon.dataUrl); if (!icons[repo]) icons[repo] = d.icon.dataUrl; } } catch {}
+  }));
+}
+
 setInterval(() => { const active = runs.filter(r => r.status !== "completed"); if (active.some(r => timers[r.id])) renderAll(); }, 50);
 
-(async () => { await preloadIcons(); await applyIconOverrides(); await loadReleases(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
+(async () => { await applyIconOverrides(); await preloadIcons(); await loadReleases(); updateBranches(); loadBuilds(); setInterval(loadBuilds, 15000); })();
