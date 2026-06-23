@@ -2,7 +2,7 @@ const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.rep
 const operatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const op = (extra = {}) => ({ "Content-Type": "application/json", "x-builder-key": operatorKey, ...extra });
 const $ = id => document.getElementById(id);
-function ensureContainer(id) { return $(id) || (() => { const d = document.createElement("div"); d.id = id; d.style.cssText = "padding:0 16px 16px"; document.querySelector("header").after(d); return d; })(); }
+function ensureContainer(id) { return $(id) || (() => { const d = document.createElement("div"); d.id = id; d.style.cssText = "padding:0 12px 12px"; document.querySelector("header").after(d); return d; })(); }
 const buildsContainer = ensureContainer("builds-container");
 const activeContainer = ensureContainer("active-container");
 const modal = $("modal");
@@ -48,6 +48,8 @@ const REPO_ICONS = {
 
 let runMeta = {}, releases = [], firebaseJson = null, currentIconDataUrl = null, iconLoadedDeferred = null;
 let runs = [];
+let seenBuildIds = {};
+let glowQueue = [];
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
 function parseTitle(title) { if (!title) return { app: "Build", pkg: "" }; const parts = title.replace(/^Android:\s*/i, "").split(" / ").map(p => p.trim()); return { app: parts[0] || "Build", pkg: parts[1] || "" }; }
@@ -70,13 +72,13 @@ async function getIconDataUrl(repo, ref) {
 
 let audioCtx = null;
 function getAudioCtx() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
-function playFanfare() { try { const ctx = getAudioCtx(); [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.08, ctx.currentTime + i * 0.15); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.6); o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime + i * 0.15); o.stop(ctx.currentTime + i * 0.15 + 0.6); }); } catch {} }
-function playErrorSound() { try { const ctx = getAudioCtx(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = 150; g.gain.setValueAtTime(0.1, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.5); } catch {} }
+function playFanfare() { try { const ctx = getAudioCtx(); [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => { const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.15); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 2.5); o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime + i * 0.15); o.stop(ctx.currentTime + i * 0.15 + 2.5); }); } catch {} }
+function playErrorSound() { try { const ctx = getAudioCtx(); const o = ctx.createOscillator(); const g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = 150; g.gain.setValueAtTime(0.15, ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 2.5); } catch {} }
 
 function fireConfetti(dur = 4000) {
-  const canvas = document.createElement("canvas"); canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:999"; canvas.width = innerWidth; canvas.height = innerHeight; document.body.appendChild(canvas); const ctx = canvas.getContext("2d");
-  const p = []; const colors = ["#ffd700","#ff6347","#00ff7f","#ff69b4","#87ceeb","#ffa500"];
-  for (let i = 0; i < 80; i++) p.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height * -1, vx: (Math.random() - 0.5) * 4, vy: Math.random() * 3 + 1, w: Math.random() * 8 + 4, h: Math.random() * 4 + 2, color: colors[Math.floor(Math.random() * colors.length)], alpha: 1, rot: Math.random() * 360 });
+  const canvas = document.createElement("canvas"); canvas.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9999;mix-blend-mode:screen"; canvas.width = innerWidth; canvas.height = innerHeight; document.body.appendChild(canvas); const ctx = canvas.getContext("2d");
+  const p = []; const colors = ["#ffd700","#ff4500","#00ff00","#ff1493","#00bfff","#ffa500","#ff00ff","#ffff00"];
+  for (let i = 0; i < 150; i++) p.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height * -1, vx: (Math.random() - 0.5) * 6, vy: Math.random() * 4 + 2, w: Math.random() * 10 + 4, h: Math.random() * 6 + 2, color: colors[Math.floor(Math.random() * colors.length)], alpha: 1, rot: Math.random() * 360 });
   const start = Date.now();
   function anim() { const elapsed = Date.now() - start; if (elapsed > dur) { canvas.remove(); return; } ctx.clearRect(0, 0, canvas.width, canvas.height); for (const pt of p) { pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.02; pt.rot += 2; pt.alpha = Math.max(0, 1 - elapsed / dur); ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.rot * Math.PI / 180); ctx.globalAlpha = pt.alpha; ctx.fillStyle = pt.color; ctx.fillRect(-pt.w / 2, -pt.h / 2, pt.w, pt.h); ctx.restore(); } requestAnimationFrame(anim); }
   anim();
@@ -139,13 +141,15 @@ function buildCardHTML(r, idx) {
   const bgStyle = idx % 2 === 0 ? 'background:#1a202c' : 'background:#161b22';
   const iconBlock = iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="" loading="lazy" onerror="this.onerror=null;this.alt='🎮'">` : `<div class="card-icon card-icon-placeholder">🎮</div>`;
   const timerId = `t-${r.id}`;
-  const timerHtml = `<span class="timer" id="${timerId}" data-run="${r.id}" style="display:${st!=='completed'&&timers[r.id]?'inline':'none'};color:#ffd700">⏱ 00:00,00</span>`;
+  const timerHtml = `<span class="timer" id="${timerId}" data-run="${r.id}" style="display:${st!=='completed'&&timers[r.id]?'inline':'none'};color:#ffd700;font-size:15px;font-weight:700;margin-left:8px">⏱ 00:00,00</span>`;
   return `<div class="build-card${isProgress?' in-progress':''}" style="${bgStyle}" data-id="${r.id}">${iconBlock}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div><div class="right-col"><div class="actions-col">${concl==="success"&&downloads.apk?`<a class="dl-btn" href="${downloads.apk}" download>APK</a>`:""}${concl==="success"&&downloads.aab?`<a class="dl-btn" href="${downloads.aab}" download>AAB</a>`:""}${concl!=="success"?`<a href="${esc(url)}" target="_blank" class="log-btn">Логи</a>`:""}</div><div class="actions-col"><span class="status ${cls} status-small">${label}</span><button class="del-btn" onclick="deleteRun(${r.id},event)" title="Удалить">✕</button></div></div></div>`;
 }
 
 function updateTimers() {
   const now = Date.now();
   for (const [id, t] of Object.entries(timers)) {
+    const run = runs.find(r => r.id === id);
+    if (run && run.status === "completed") { delete timers[id]; const el = document.getElementById(`t-${id}`); if (el) el.style.display = "none"; continue; }
     const el = document.getElementById(`t-${id}`);
     if (!el) continue;
     const left = Math.max(0, t.total - (now - t.start));
@@ -169,7 +173,7 @@ function renderAll() {
   const active = runs.filter(r => r.status !== "completed");
   const done = runs.filter(r => r.status === "completed" && r.conclusion === "success");
   const fail = runs.filter(r => r.status === "completed" && r.conclusion !== "success");
-  const allDone = [...done, ...fail].slice(0, 30);
+  const allDone = [...done, ...fail].slice(0, 100);
 
   const activeHtml = active.length ? active.map((r, i) => buildCardHTML(r, i)).join("") : "";
   const doneHtml = allDone.length ? allDone.map((r, i) => buildCardHTML(r, i + active.length)).join("") : "";
@@ -179,6 +183,14 @@ function renderAll() {
   activeContainer.style.display = activeHtml ? "" : "none";
   buildsContainer.style.display = doneHtml ? "" : "none";
 
+  for (const r of [...active, ...allDone]) {
+    if (r.status === "completed" && r.conclusion === "success" && !seenBuildIds[r.id]) {
+      seenBuildIds[r.id] = true;
+      glowQueue.push(r.id);
+    }
+  }
+  processGlow();
+
   let statsEl = document.getElementById("stats");
   if (!statsEl) {
     statsEl = document.createElement("div");
@@ -187,6 +199,25 @@ function renderAll() {
     buildsContainer.appendChild(statsEl);
   }
   statsEl.textContent = `Всего: ${runs.length} | Активные: ${active.length} | Успешно: ${done.length} | Ошибок: ${fail.length}`;
+}
+
+function processGlow() {
+  if (!glowQueue.length) return;
+  const id = glowQueue.shift();
+  const delay = Math.random() * 2000 + 500;
+  setTimeout(() => {
+    const card = document.querySelector(`.build-card[data-id="${id}"]`);
+    if (card) {
+      card.style.transition = "box-shadow 0s";
+      card.style.boxShadow = "0 0 30px 10px rgba(255,215,0,0.8)";
+      setTimeout(() => {
+        card.style.transition = "box-shadow 1.5s ease-out";
+        card.style.boxShadow = "0 0 0 0 rgba(255,215,0,0)";
+        setTimeout(() => { card.style.transition = ""; card.style.boxShadow = ""; }, 1500);
+      }, 300);
+    }
+    processGlow();
+  }, delay);
 }
 
 async function loadBuilds() {
@@ -216,7 +247,7 @@ async function loadBuilds() {
       const old = oldRuns.find(o => o.id === r.id);
       if (old && old.status !== "completed" && r.status === "completed") {
         if (r.conclusion === "success") { playFanfare(); fireConfetti(4000); }
-        else playErrorSound();
+        else { playErrorSound(); flashRed(); }
       }
     }
     renderAll();
@@ -287,6 +318,17 @@ firebaseFile.addEventListener("change", e => {
   r.onload = () => { firebaseJson = r.result; };
   r.readAsDataURL(f);
 });
+
+function flashRed() {
+  const div = document.createElement("div");
+  div.style.cssText = "position:fixed;inset:0;background:#ff0000;z-index:99999;pointer-events:none";
+  document.body.appendChild(div);
+  requestAnimationFrame(() => {
+    div.style.transition = "opacity 3s ease-out";
+    div.style.opacity = "0";
+    setTimeout(() => div.remove(), 3500);
+  });
+}
 
 repoSelect.addEventListener("change", () => { updateBranches(); });
 branchSelect.addEventListener("change", () => {
