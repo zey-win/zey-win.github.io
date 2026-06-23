@@ -87,6 +87,8 @@ input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 .del-btn{background:#da363320;color:#f85149;border:1px solid rgba(218,54,51,0.3);border-radius:999px;padding:8px 18px;font-weight:600;text-transform:lowercase}
 .del-btn:hover{background:#da363340}
 .log-btn{background:#21262d;color:#58a6ff;border-radius:10px}
+.log-btn-bottom{margin-top:auto}
 .log-btn:hover{background:#30363d}
+.status-row{display:flex;align-items:center;gap:8px}
 .skeleton-card{background:#1a202c;border:1px solid #30363d;border-radius:12px;padding:16px;margin-bottom:12px;height:80px;animation:skeleton-pulse 1.2s ease-in-out infinite}
 @keyframes skeleton-pulse{0%,100%{opacity:.3}50%{opacity:.7}}
