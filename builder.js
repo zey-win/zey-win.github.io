@@ -206,7 +206,6 @@ async function loadBuilds() {
         if (v.code) runMeta[rid].code = v.code;
       }
     } catch {}
-    }
     for (const r of runs) {
       if (r.status !== "completed" && !timers[r.id]) {
         const created = r.createdAt ? new Date(r.createdAt).getTime() : Date.now();
