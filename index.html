@@ -21,7 +21,8 @@
 
 <div id="modal" class="hidden">
 <form id="build-form">
-<label>Игра
+<div class="form-row">
+<label style="flex:3">Игра
 <select name="game_repository" id="repo-select">
 <option value="zey-win/plinko">Plinko</option>
 <option value="zey-win/blackjack">Blackjack</option>
@@ -33,45 +34,55 @@
 <option value="zey-win/SlotSpot">SlotSpot</option>
 </select>
 </label>
-<label>Ветка
+<label style="flex:2">Ветка
 <select name="game_ref" id="branch-select">
 </select>
 </label>
+</div>
 
-<div id="icon-row" class="fade-in">
+<div class="icon-format-row">
+<div class="icon-col">
 <div id="icon-wrapper" style="width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center">
 <img id="game-icon" src="" alt="" style="width:64px;height:64px;border-radius:8px;display:none">
 <div id="icon-spinner" class="icon-spinner" style="display:none"></div>
 </div>
+<div class="icon-btns">
 <label class="icon-upload" id="icon-upload-label">
 <input type="file" id="icon-file" accept="image/png" style="display:none">
-📷 Заменить иконку
+📷
 </label>
+<button type="button" id="icon-gen-btn" class="icon-upload" title="Сгенерировать">🔄</button>
 </div>
-
-<label>Название приложения <input name="app_name" id="f-app-name"></label>
-<label>Package name <input name="package_name"></label>
+</div>
+<div class="format-col">
 <label>Формат <select name="build_format">
 <option value="apk">APK</option>
 <option value="aab">AAB</option>
 <option value="apk_aab">APK+AAB</option>
 </select></label>
-<label>Архитектура <select name="fast_build">
-<option value="false">ARMv7 + ARM64 (32+64 бит)</option>
-<option value="true">ARM64 (быстрее, меньше APK)</option>
+<div class="arch-vc-row">
+<label style="flex:1">bit's <select name="fast_build">
+<option value="false">32x+64x</option>
+<option value="true">64x</option>
 </select></label>
+<label style="flex:1">Version Code
+<div style="display:flex;gap:4px;align-items:center">
+<input name="version_code" id="f-vcode" type="number" step="1" value="1" style="flex:1">
+<button type="button" class="step-btn" data-target="f-vcode" data-step="1" data-dir="1">+</button>
+<button type="button" class="step-btn" data-target="f-vcode" data-step="1" data-dir="-1">−</button>
+</div>
+</label>
+</div>
+</div>
+</div>
+
+<label>Название приложения <input name="app_name" id="f-app-name"></label>
+<label>Package name <input name="package_name"></label>
 <label>Версия
 <div style="display:flex;gap:4px;align-items:center">
 <input name="version_name" id="f-version" type="number" step="0.1" value="1" style="flex:1">
 <button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="1">+</button>
 <button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="-1">−</button>
-</div>
-</label>
-<label>Version Code
-<div style="display:flex;gap:4px;align-items:center">
-<input name="version_code" id="f-vcode" type="number" step="1" value="1" style="flex:1">
-<button type="button" class="step-btn" data-target="f-vcode" data-step="1" data-dir="1">+</button>
-<button type="button" class="step-btn" data-target="f-vcode" data-step="1" data-dir="-1">−</button>
 </div>
 </label>
 <label>ZeyWin API Key <input name="zeywin_api_key"></label>
@@ -81,7 +92,7 @@
 <label>AdMob Rewarded <input name="admob_rewarded"></label>
 <label class="file-label">google-services.json
 <input type="file" id="firebase-file" accept=".json" style="display:none">
-<span class="file-btn" id="firebase-btn">📁 Выбрать файл</span>
+<span class="file-btn" id="firebase-btn">Загрузить</span>
 <span id="firebase-status" style="font-size:11px;color:#3fb950;display:none"></span>
 </label>
 

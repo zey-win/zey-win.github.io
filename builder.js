@@ -269,6 +269,11 @@ iconFile.addEventListener("change", e => {
   r.onload = () => { currentIconDataUrl = r.result; gameIcon.src = r.result; gameIcon.style.display = "block"; };
   r.readAsDataURL(f);
 });
+$("icon-gen-btn").addEventListener("click", () => {
+  getIconDataUrl(repoSelect.value, branchSelect.value).then(url => {
+    if (url) currentIconDataUrl = url;
+  });
+});
 firebaseFile.addEventListener("change", e => {
   const f = e.target.files[0]; if (!f) return;
   if (f.type !== "application/json") { alert("Только JSON"); return; }
