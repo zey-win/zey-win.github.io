@@ -36,8 +36,6 @@ const REPO_ICONS = {
 
 let runMeta = {}, releases = [], firebaseJson = null, currentIconDataUrl = null, iconLoadedDeferred = null;
 let runs = [];
-let seenBuildIds = {};
-let glowQueue = [];
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
 function parseTitle(title) { if (!title) return { app: "Build", pkg: "" }; const parts = title.replace(/^Android:\s*/i, "").split(" / ").map(p => p.trim()); return { app: parts[0] || "Build", pkg: parts[1] || "" }; }
@@ -171,14 +169,6 @@ function renderAll() {
   activeContainer.style.display = activeHtml ? "" : "none";
   buildsContainer.style.display = doneHtml ? "" : "none";
 
-  for (const r of [...active, ...allDone]) {
-    if (r.status === "completed" && r.conclusion === "success" && !seenBuildIds[r.id]) {
-      seenBuildIds[r.id] = true;
-      glowQueue.push(r.id);
-    }
-  }
-  processGlow();
-
   let statsEl = document.getElementById("stats");
   if (!statsEl) {
     statsEl = document.createElement("div");
@@ -187,25 +177,6 @@ function renderAll() {
     buildsContainer.appendChild(statsEl);
   }
   statsEl.textContent = `Всего: ${runs.length} | Активные: ${active.length} | Успешно: ${done.length} | Ошибок: ${fail.length}`;
-}
-
-function processGlow() {
-  if (!glowQueue.length) return;
-  const id = glowQueue.shift();
-  const delay = Math.random() * 2000 + 500;
-  setTimeout(() => {
-    const card = document.querySelector(`.build-card[data-id="${id}"]`);
-    if (card) {
-      card.style.transition = "box-shadow 0s";
-      card.style.boxShadow = "0 0 30px 10px rgba(255,215,0,0.8)";
-      setTimeout(() => {
-        card.style.transition = "box-shadow 1.5s ease-out";
-        card.style.boxShadow = "0 0 0 0 rgba(255,215,0,0)";
-        setTimeout(() => { card.style.transition = ""; card.style.boxShadow = ""; }, 1500);
-      }, 300);
-    }
-    processGlow();
-  }, delay);
 }
 
 async function loadBuilds() {
