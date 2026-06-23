@@ -220,6 +220,7 @@ async function loadBuilds() {
       }
     }
     renderAll();
+    if (loading) loading.style.display = "none";
   } catch { if (loading) loading.style.display = "none"; }
 }
 
