@@ -449,9 +449,7 @@ renderSkeletons();
 })();
 
 function renderSkeletons() {
-  activeContainer.style.display = "";
   buildsContainer.style.display = "";
-  const card = '<div class="skeleton-card"></div>';
-  activeContainer.innerHTML = card.repeat(3);
-  buildsContainer.innerHTML = card.repeat(20);
+  activeContainer.style.display = "none";
+  buildsContainer.innerHTML = '<div class="skeleton-card"></div>'.repeat(20);
 }
