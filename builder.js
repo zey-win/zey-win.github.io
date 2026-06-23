@@ -460,22 +460,18 @@ $("f-app-name").addEventListener("paste", e => {
 const stopTimerLoop = startTimerLoop();
 renderSkeletons();
 
-function breatheGlow() {
-  const mf = document.querySelector("#modal form");
-  if (!mf || modal.classList.contains("hidden")) { return; }
-  mf.classList.add("glow");
-  const hold = 3000 + Math.random() * 3000;
+function scheduleGlow() {
+  const delay = 10000 + Math.random() * 20000;
   setTimeout(() => {
-    if (modal.classList.contains("hidden")) { mf.classList.remove("glow"); return; }
-    mf.classList.remove("glow");
-    const pause = 3000 + Math.random() * 7000;
-    setTimeout(breatheGlow, pause + 1800);
-  }, hold);
+    const mf = document.querySelector("#modal form");
+    if (mf && !modal.classList.contains("hidden")) {
+      mf.classList.add("glow");
+      setTimeout(() => mf.classList.remove("glow"), 5000);
+    }
+    scheduleGlow();
+  }, delay);
 }
-const origOpen = newBuildBtn.click;
-newBuildBtn.addEventListener("click", () => { setTimeout(() => breatheGlow(), 500); });
-cancelBtn.addEventListener("click", () => { const mf = document.querySelector("#modal form"); if (mf) mf.classList.remove("glow"); });
-modal.addEventListener("click", e => { if (e.target === modal) { const mf = document.querySelector("#modal form"); if (mf) mf.classList.remove("glow"); } });
+scheduleGlow();
 
 (async () => {
   await loadReleases();
