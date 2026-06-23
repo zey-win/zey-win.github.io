@@ -353,23 +353,15 @@ form.addEventListener("submit", async e => {
   } catch (err) { alert("Ошибка: " + err.message); }
 });
 
-// ----- Search / filter -----
-const searchContainer = document.createElement("div");
-searchContainer.style.cssText = "display:flex;gap:8px;align-items:center;padding:8px 16px;background:#0d1117;border-bottom:1px solid #21262d";
-const searchIcon = document.createElement("span");
-searchIcon.textContent = "🔍";
-searchIcon.style.cssText = "color:#8b949e;font-size:14px";
+// ----- Search in header -----
+const header = document.querySelector("header");
 const searchInput = document.createElement("input");
 searchInput.id = "search-input";
 searchInput.type = "text";
-searchInput.placeholder = "Поиск по названию или пакету...";
-searchInput.style.cssText = "flex:1;padding:6px 10px;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:13px;outline:none";
+searchInput.placeholder = "🔍 Поиск...";
+searchInput.style.cssText = "padding:6px 10px;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:13px;outline:none;width:180px;flex-shrink:0";
 searchInput.addEventListener("input", () => { filterCards(); });
-searchContainer.appendChild(searchIcon);
-searchContainer.appendChild(searchInput);
-
-const header = document.querySelector("header");
-if (header) header.parentNode.insertBefore(searchContainer, header.nextSibling);
+header?.appendChild(searchInput);
 
 // ----- Clipboard for modal inputs -----
 const clipboardExceptedInputs = new Set(["app_name"]);
