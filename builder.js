@@ -440,9 +440,18 @@ $("f-app-name").addEventListener("paste", e => {
 
 // ----- Startup -----
 const stopTimerLoop = startTimerLoop();
+renderSkeletons();
 (async () => {
   await loadReleases();
   updateBranches();
   loadBuilds();
   setInterval(loadBuilds, 15000);
 })();
+
+function renderSkeletons() {
+  activeContainer.style.display = "";
+  buildsContainer.style.display = "";
+  const card = '<div class="skeleton-card"></div>';
+  activeContainer.innerHTML = card.repeat(3);
+  buildsContainer.innerHTML = card.repeat(20);
+}
