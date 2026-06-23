@@ -148,9 +148,13 @@ async function loadBuilds() {
     if (!runsRes.ok) { buildsContainer.innerHTML = "<p>No builds</p>"; return; }
     const d = await runsRes.json(); const oldRuns = runs; runs = Array.isArray(d.runs) ? d.runs : [];
     for (const r of runs) {
-      if (r.iconUrl && !runMeta[r.id]) {
-        runMeta[r.id] = { icon: r.iconUrl };
+      let icon = r.iconUrl;
+      if (!icon) {
+        const title = `${r.displayTitle || ""} ${r.name || ""}`;
+        const m = title.match(/builder-([a-z0-9]+)/);
+        if (m) icon = `https://raw.githubusercontent.com/zey-win/ci-cd/main/builds/icons/${m[1]}.png`;
       }
+      if (icon && !runMeta[r.id]) runMeta[r.id] = { icon };
     }
     // Ensure timer for all active builds (restore after page reload)
     for (const r of runs) {
@@ -188,7 +192,7 @@ function card(r, idx) {
   const isProgress = ["in_progress", "pending", "queued", "waiting"].includes(st);
   const gifClass = isProgress ? " in-progress" : "";
   const bgStyle = idx !== undefined && idx % 2 === 0 ? 'style="background:#1a202c"' : 'style="background:#161b22"';
-  const iconBlock = iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="">` : `<div class="card-icon card-icon-placeholder">🎮</div>`;
+  const iconBlock = iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="" onerror="this.onerror=null;this.alt='🎮'">` : `<div class="card-icon card-icon-placeholder">🎮</div>`;
   const infoBlock = `<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}${timerHtml}</div><div class="meta">${versionInfo}</div></div>`;
   const rightBlock = `<div class="right-col"><div class="actions-col">${concl === "success" && downloads.apk ? `<a class="dl-btn" href="${downloads.apk}" download>APK</a>` : ""}${concl === "success" && downloads.aab ? `<a class="dl-btn" href="${downloads.aab}" download>AAB</a>` : ""}${concl !== "success" ? `<a href="${esc(url)}" target="_blank" class="log-btn" style="text-align:center">Логи</a>` : ""}</div><div class="actions-col"><span class="status ${cls} status-small">${label}</span><button class="del-btn" onclick="deleteRun(${r.id}, event)" title="Delete">Delete</button></div></div>`;
   return `<div class="build-card${gifClass}" ${bgStyle}>${iconBlock}${infoBlock}${rightBlock}</div>`;
