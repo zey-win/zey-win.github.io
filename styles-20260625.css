@@ -56,8 +56,11 @@ input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 @keyframes spin{to{transform:rotate(360deg)}}
 .build-card .btn-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .build-card .btn-group a,.dl-btn,.del-btn,.log-btn{padding:8px 14px;border-radius:10px;font-size:14px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4;white-space:nowrap}
-.dl-btn{background:#238636;color:#fff;min-width:72px;text-align:center;font-weight:600}
-.dl-btn:hover{background:#2ea043}
+.dl-btn{text-align:center;font-weight:600;min-width:72px;padding:8px 14px;border-radius:10px;font-size:14px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4;white-space:nowrap}
+.dl-btn-apk{background:#238636;color:#fff}
+.dl-btn-apk:hover{background:#2ea043}
+.dl-btn-aab{background:#d4871a;color:#fff}
+.dl-btn-aab:hover{background:#e09e30}
 .del-btn{background:#da363320;color:#f85149;border:1px solid rgba(218,54,51,0.3);border-radius:999px;padding:8px 18px;font-weight:600;text-transform:lowercase}
 .del-btn:hover{background:#da363340}
 .log-btn{background:#21262d;color:#58a6ff;border-radius:10px}
