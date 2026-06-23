@@ -2,8 +2,9 @@ const apiBase = document.querySelector('meta[name="builder-api"]')?.content?.rep
 const operatorKey = document.querySelector('meta[name="builder-key"]')?.content?.trim() || "";
 const op = (extra = {}) => ({ "Content-Type": "application/json", "x-builder-key": operatorKey, ...extra });
 const $ = id => document.getElementById(id);
-const buildsContainer = $("builds-container");
-const activeContainer = $("active-container");
+function ensureContainer(id) { return $(id) || (() => { const d = document.createElement("div"); d.id = id; d.style.cssText = "padding:0 16px 16px"; document.querySelector("header").after(d); return d; })(); }
+const buildsContainer = ensureContainer("builds-container");
+const activeContainer = ensureContainer("active-container");
 const modal = $("modal");
 const form = $("build-form");
 const newBuildBtn = $("new-build");
@@ -175,13 +176,15 @@ function renderAll() {
 
   if (activeContainer.innerHTML !== activeHtml) activeContainer.innerHTML = activeHtml;
   if (buildsContainer.innerHTML !== doneHtml) buildsContainer.innerHTML = doneHtml;
+  activeContainer.style.display = activeHtml ? "" : "none";
+  buildsContainer.style.display = doneHtml ? "" : "none";
 
   let statsEl = document.getElementById("stats");
   if (!statsEl) {
     statsEl = document.createElement("div");
     statsEl.id = "stats";
     statsEl.style.cssText = "text-align:center;color:#8b949e;font-size:13px;padding:8px 0";
-    buildsContainer.parentNode.insertBefore(statsEl, buildsContainer);
+    buildsContainer.appendChild(statsEl);
   }
   statsEl.textContent = `Всего: ${runs.length} | Активные: ${active.length} | Успешно: ${done.length} | Ошибок: ${fail.length}`;
 }
@@ -190,7 +193,7 @@ async function loadBuilds() {
   if (loading) loading.style.display = "inline-flex";
   try {
     const [runsRes] = await Promise.all([fetch(`${apiBase}/api/runs`), loadReleases()]);
-    if (!runsRes.ok) { buildsContainer.innerHTML = "<p>Нет сборок</p>"; return; }
+    if (!runsRes.ok) { return; }
     const d = await runsRes.json();
     const oldRuns = runs;
     runs = Array.isArray(d.runs) ? d.runs : [];
