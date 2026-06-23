@@ -116,7 +116,17 @@ function buildCardHTML(r, idx) {
   const verStr = (meta?.ver) || String(r.runNumber || "");
   const codeStr = (meta?.code) || String(r.runAttempt || "1");
   const versionInfo = verStr ? `<span class="version-line">v${esc(verStr)} (code ${codeStr})</span>` : "";
-  const downloads = concl === "success" ? findDownloads(pkg) : { apk: null, aab: null };
+  let downloads = { apk: null, aab: null };
+  if (concl === "success") {
+    if (meta?.apk || meta?.aab) downloads = { apk: meta.apk || null, aab: meta.aab || null };
+    else downloads = findDownloads(pkg);
+    if (downloads.apk || downloads.aab) {
+      if (!runMeta[r.id]) runMeta[r.id] = {};
+      if (downloads.apk) runMeta[r.id].apk = downloads.apk;
+      if (downloads.aab) runMeta[r.id].aab = downloads.aab;
+      try { const sv = JSON.parse(localStorage.getItem('rv')||'{}'); if (!sv[r.id]) sv[r.id]={}; if (downloads.apk) sv[r.id].apk=downloads.apk; if (downloads.aab) sv[r.id].aab=downloads.aab; localStorage.setItem('rv',JSON.stringify(sv)); } catch {}
+    }
+  }
   let label, cls;
   if (concl === "success") { label = "✅<span class='lt'> Готов</span>"; cls = "status-success"; }
   else if (concl === "failure") { label = "❌<span class='lt'> Ошибка</span>"; cls = "status-failure"; }
@@ -204,6 +214,8 @@ async function loadBuilds() {
         if (!runMeta[rid]) runMeta[rid] = {};
         if (v.ver) runMeta[rid].ver = v.ver;
         if (v.code) runMeta[rid].code = v.code;
+        if (v.apk) runMeta[rid].apk = v.apk;
+        if (v.aab) runMeta[rid].aab = v.aab;
       }
     } catch {}
     for (const r of runs) {
@@ -324,7 +336,13 @@ form.addEventListener("submit", async e => {
       const serverIconPath = d.icon?.path;
       const serverIconUrl = serverIconPath ? `https://raw.githubusercontent.com/zey-win/ci-cd/main/${serverIconPath}` : (d.icon?.htmlUrl || null);
       runMeta[d.run.id] = { icon: serverIconUrl || null, ver: p.version_name || "", code: p.version_code || "" };
-      try { const sv = JSON.parse(localStorage.getItem('rv')||'{}'); sv[d.run.id]={ver:p.version_name||'',code:p.version_code||''}; localStorage.setItem('rv',JSON.stringify(sv)); } catch {}
+      try {
+        const sv = JSON.parse(localStorage.getItem('rv')||'{}');
+        sv[d.run.id]={ver:p.version_name||'',code:p.version_code||''};
+        if (d.latestArtifact?.apkDownloadUrl) { runMeta[d.run.id].apk = d.latestArtifact.apkDownloadUrl; sv[d.run.id].apk = d.latestArtifact.apkDownloadUrl; }
+        if (d.latestArtifact?.aabDownloadUrl) { runMeta[d.run.id].aab = d.latestArtifact.aabDownloadUrl; sv[d.run.id].aab = d.latestArtifact.aabDownloadUrl; }
+        localStorage.setItem('rv',JSON.stringify(sv));
+      } catch {}
       timers[d.run.id] = { start: Date.now(), total: (39 + (d.run.id % 12)) * 60 * 1000 };
       runs = [d.run, ...runs];
       renderAll();
