@@ -193,7 +193,7 @@ async function loadBuilds() {
   if (loading) loading.style.display = "inline-flex";
   try {
     const [runsRes] = await Promise.all([fetch(`${apiBase}/api/runs`), loadReleases()]);
-    if (!runsRes.ok) { return; }
+    if (!runsRes.ok) return;
     const d = await runsRes.json();
     const oldRuns = runs;
     runs = Array.isArray(d.runs) ? d.runs : [];
@@ -220,8 +220,7 @@ async function loadBuilds() {
       }
     }
     renderAll();
-    if (loading) loading.style.display = "none";
-  } catch { if (loading) loading.style.display = "none"; }
+  } catch(e) { console.error(e); } finally { if (loading) loading.style.display = "none"; }
 }
 
 async function deleteRun(runId, e) {
