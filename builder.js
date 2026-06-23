@@ -300,6 +300,10 @@ branchSelect.addEventListener("change", () => {
 
 newBuildBtn.addEventListener("click", () => {
   currentIconDataUrl = null; firebaseJson = null;
+  form.style.display = "";
+  $("build-progress").classList.add("hidden");
+  const all = form.querySelectorAll("label, .modal-actions, .form-row, .icon-format-row");
+  all.forEach(el => { el.style.opacity = ""; el.style.transform = ""; el.style.transition = ""; });
   modal.classList.remove("hidden");
   updateBranches();
   iconLoadedDeferred = getIconDataUrl(repoSelect.value, branchSelect.value).then(url => { if (url) currentIconDataUrl = url; });
@@ -330,7 +334,6 @@ form.addEventListener("submit", async e => {
     iconDataUrl: iconData,
     firebaseJsonBase64: firebaseJson || ""
   };
-  modal.classList.add("hidden");
   try {
     const res = await fetch(`${apiBase}/api/build`, { method: "POST", headers: op(), body: JSON.stringify(p) });
     if (!res.ok) { alert("Ошибка: " + await res.text().catch(() => "")); return; }
@@ -338,14 +341,49 @@ form.addEventListener("submit", async e => {
     if (d.run) {
       const serverIconPath = d.icon?.path;
       const serverIconUrl = serverIconPath ? `https://raw.githubusercontent.com/zey-win/ci-cd/main/${serverIconPath}` : (d.icon?.htmlUrl || null);
-      if (serverIconUrl) runMeta[d.run.id] = { icon: serverIconUrl, ver: p.version_name || "", code: p.version_code || "" };
+      runMeta[d.run.id] = { icon: serverIconUrl || null, ver: p.version_name || "", code: p.version_code || "" };
       timers[d.run.id] = { start: Date.now(), total: (39 + (d.run.id % 12)) * 60 * 1000 };
       runs = [d.run, ...runs];
       renderAll();
     } else loadBuilds();
     iconLoadedDeferred = null;
+    // Animated close
+    animateModalClose();
   } catch (err) { alert("Ошибка: " + err.message); }
 });
+
+function animateModalClose() {
+  const form = $("build-form");
+  const progress = $("build-progress");
+  const steps = $("bp-steps");
+  const all = form.querySelectorAll("label, .modal-actions, .form-row, .icon-format-row");
+  const phrases = [
+    "Клонирование репозитория...", "Установка зависимостей...", "Компиляция кода...",
+    "Сборка ресурсов...", "Оптимизация изображений...", "Подписание APK...",
+    "Проверка ProGuard...", "Генерация AAB...", "Запуск тестов...",
+    "Финализация сборки...", "Загрузка артефактов...", "Обновление метаданных..."
+  ];
+  let delay = 0;
+  all.forEach((el, i) => {
+    const d = 200 + i * 120;
+    setTimeout(() => { el.style.transition = "opacity .3s,transform .3s"; el.style.opacity = "0"; el.style.transform = "scale(.95)"; }, d);
+    delay = d + 300;
+  });
+  setTimeout(() => { form.style.display = "none"; progress.classList.remove("hidden"); }, delay);
+  const totalTime = 5000;
+  const start = Date.now();
+  let idx = 0;
+  function scrollText() {
+    const elapsed = Date.now() - start;
+    if (elapsed >= totalTime) { modal.classList.add("hidden"); form.style.display = ""; form.querySelectorAll("label, .modal-actions, .form-row, .icon-format-row").forEach(el => { el.style.opacity = ""; el.style.transform = ""; }); progress.classList.add("hidden"); return; }
+    idx = Math.floor((elapsed / totalTime) * phrases.length * 3) % phrases.length;
+    steps.textContent = phrases[idx % phrases.length];
+    steps.style.opacity = "0";
+    requestAnimationFrame(() => { steps.style.transition = "opacity .05s"; steps.style.opacity = "1"; });
+    requestAnimationFrame(scrollText);
+  }
+  requestAnimationFrame(scrollText);
+}
 
 // ----- Step buttons -----
 document.addEventListener("click", e => {

@@ -42,24 +42,33 @@
 
 <div class="icon-format-row">
 <div class="icon-col">
-<div id="icon-wrapper" style="width:64px;height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center">
-<img id="game-icon" src="" alt="" style="width:64px;height:64px;border-radius:8px;display:none">
+<div id="icon-wrapper">
+<img id="game-icon" src="" alt="" style="width:72px;height:72px;border-radius:10px;display:none">
 <div id="icon-spinner" class="icon-spinner" style="display:none"></div>
 </div>
 <div class="icon-btns">
-<label class="icon-upload" id="icon-upload-label">
+<label class="icon-btn icon-btn-upload" id="icon-upload-label">
 <input type="file" id="icon-file" accept="image/png" style="display:none">
-📷
+📷 Загрузить
 </label>
-<button type="button" id="icon-gen-btn" class="icon-upload" title="Сгенерировать">🔄</button>
+<button type="button" id="icon-gen-btn" class="icon-btn icon-btn-gen" title="Сгенерировать">🔄 Генерировать</button>
 </div>
 </div>
 <div class="format-col">
-<label>Формат <select name="build_format">
+<div class="ver-format-row">
+<label style="flex:1">Версия
+<div style="display:flex;gap:4px;align-items:center">
+<input name="version_name" id="f-version" type="number" step="0.1" value="1" style="flex:1">
+<button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="1">+</button>
+<button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="-1">−</button>
+</div>
+</label>
+<label style="flex:1">Формат <select name="build_format">
 <option value="apk">APK</option>
 <option value="aab">AAB</option>
 <option value="apk_aab">APK+AAB</option>
 </select></label>
+</div>
 <div class="arch-vc-row">
 <label style="flex:1">bit's <select name="fast_build">
 <option value="false">32x+64x</option>
@@ -78,29 +87,25 @@
 
 <label>Название приложения <input name="app_name" id="f-app-name"></label>
 <label>Package name <input name="package_name"></label>
-<label>Версия
-<div style="display:flex;gap:4px;align-items:center">
-<input name="version_name" id="f-version" type="number" step="0.1" value="1" style="flex:1">
-<button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="1">+</button>
-<button type="button" class="step-btn" data-target="f-version" data-step="0.1" data-dir="-1">−</button>
-</div>
-</label>
 <label>ZeyWin API Key <input name="zeywin_api_key"></label>
 <label>AdMob App ID <input name="admob_app_id" id="f-admob-app"></label>
 <label>AdMob Banner <input name="admob_banner"></label>
 <label>AdMob Interstitial <input name="admob_interstitial"></label>
 <label>AdMob Rewarded <input name="admob_rewarded"></label>
-<label class="file-label">google-services.json
+<label class="file-label" id="firebase-label">google-services.json
 <input type="file" id="firebase-file" accept=".json" style="display:none">
-<span class="file-btn" id="firebase-btn">Загрузить</span>
-<span id="firebase-status" style="font-size:11px;color:#3fb950;display:none"></span>
+<span class="file-btn firebase-btn" id="firebase-btn">Загрузить</span>
+<span id="firebase-status" style="font-size:11px;color:#fff;display:none"></span>
 </label>
 
 <div class="modal-actions">
 <button type="button" id="modal-cancel">Отмена</button>
-<button type="submit">Запустить</button>
+<button type="submit" id="modal-submit">Собрать</button>
 </div>
 </form>
+<div id="build-progress" class="hidden">
+<div id="bp-steps"></div>
+</div>
 </div>
 
 <script src="builder.js?v2"></script>
