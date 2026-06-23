@@ -1,52 +1,66 @@
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0d1117;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;max-width:960px;margin:0 auto}
-#bar{display:flex;align-items:center;gap:8px;background:#161b22;padding:8px 12px 0}
-#bar h1{font-size:22px;color:#f0f6fc;padding:0}
-#new-build{margin-left:auto;background:#238636;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:13px;cursor:pointer}
+body{background:#0d1117;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;padding:0;max-width:960px;margin:0 auto}
+header{background:#161b22;margin:0;padding:0}
+h1{font-size:24px;color:#f0f6fc}
+h2{font-size:18px;margin-bottom:12px;color:#f0f6fc}
+p{color:#8b949e;font-size:14px}
+button{cursor:pointer;padding:8px 16px;border:none;border-radius:6px;font-size:14px}
+#new-build{background:#238636;color:#fff}
 #new-build:hover{background:#2ea043}
-#list{padding:0 12px 12px}
-.build-card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
-.build-card.in-progress::before{content:"";position:absolute;inset:0;background-image:url('animation.gif');background-size:auto;background-position:center;background-repeat:repeat;opacity:0.25;pointer-events:none;z-index:1;mix-blend-mode:plus-lighter}
-.card-icon{width:56px;height:56px;border-radius:10px;flex-shrink:0;object-fit:cover}
-.build-card .info{flex:1;min-width:0}
-.build-card .app-name{font-weight:700;font-size:18px;color:#f0f6fc}
-.build-card .meta{font-size:13px;color:#8b949e;margin-top:2px}
-.build-card .status{padding:5px 12px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
-.status-success{background:#23863620;color:#3fb950}
-.status-failure{background:#da363320;color:#f85149}
-.status-pending{background:#d2992220;color:#d29922}
-.build-card .actions{display:flex;gap:6px;align-items:center}
-.dl-btn{background:#238636;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;text-decoration:none;display:inline-block}
-.dl-btn:hover{background:#2ea043}
-.del-btn{background:#da363320;color:#f85149;border:1px solid rgba(218,54,51,0.3);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer}
-.del-btn:hover{background:#da363340}
-.log-btn{background:#21262d;color:#58a6ff;border:none;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer}
-.log-btn:hover{background:#30363d}
 .btn-secondary{background:#21262d;color:#c9d1d9;border:1px solid #30363d}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999}
 #modal.hidden{display:none}
+#modal h2{margin-bottom:16px}
 #modal form{background:#161b22;padding:24px;border-radius:8px;border:1px solid #30363d;width:400px;max-width:90vw}
-#modal h2{font-size:18px;color:#f0f6fc;margin-bottom:12px}
-label{display:block;margin-bottom:10px;font-size:13px;color:#8b949e}
+label{display:block;margin-bottom:12px;font-size:13px;color:#8b949e}
 label input,label select{display:block;width:100%;margin-top:4px;padding:8px;background:#0d1117;border:1px solid #30363d;border-radius:4px;color:#c9d1d9;font-size:14px}
+input[name^="admob_"]{text-align:right;direction:rtl}
+input[name="zeywin_api_key"]{text-align:right;direction:rtl}
 .form-row{display:flex;gap:12px;margin-bottom:12px}
 .form-row label{flex:1}
-#icon-row{text-align:center;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
-.icon-upload{cursor:pointer;padding:4px 10px;background:#21262d;border-radius:4px;color:#58a6ff;font-size:12px;border:1px solid #30363d}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.modal-actions button[type=submit]{background:#238636;color:#fff}
+details{margin-bottom:12px}
 details summary{cursor:pointer;color:#58a6ff;font-size:13px;padding:4px 0}
 .params-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.params-grid label{margin-bottom:0}
+.file-label{cursor:pointer;padding:8px;border:1px dashed #30363d;border-radius:4px;text-align:center}
+.file-label .file-btn{color:#58a6ff;font-size:13px}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeSlideUp .5s ease-out}
+.fade-in-delayed{animation:fadeSlideUp .5s ease-out .6s both}
 .spinner-inline{display:inline-flex;align-items:center;width:20px;height:20px}
 .spinner-inline .spinner{width:18px;height:18px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
 .icon-spinner{width:30px;height:30px;border:2px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
+#icon-row{text-align:center;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+.icon-upload{cursor:pointer;padding:4px 10px;background:#21262d;border-radius:4px;color:#58a6ff;font-size:12px;border:1px solid #30363d}
+.icon-upload:hover{background:#30363d}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.modal-actions button{padding:8px 20px}
+.modal-actions button[type=submit]{background:#238636;color:#fff}
+.build-card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}
+.build-card.in-progress::before{content:"";position:absolute;inset:0;background-image:url('animation.gif');background-size:auto;background-position:center;background-repeat:repeat;opacity:0.25;pointer-events:none;z-index:1;mix-blend-mode:plus-lighter}
+.build-card .right-col{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.build-card .actions-col{display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;flex:1;min-width:120px}
+.status-small{font-size:11px;padding:4px 8px;text-align:center;display:flex;align-items:center;justify-content:center}
+.card-icon{width:64px;height:64px;border-radius:12px;flex-shrink:0;object-fit:cover}
+.build-card .info{flex:1;min-width:0}
+.build-card .app-name{font-weight:700;font-size:20px;color:#f0f6fc;margin-bottom:4px}
+.build-card .meta{font-size:14px;color:#8b949e;margin-top:2px}
+@media(max-width:768px){.build-card{flex-wrap:wrap;gap:10px;padding:12px}.build-card .right-col{flex-wrap:wrap;gap:8px;width:100%;justify-content:flex-start}.build-card.in-progress::before{background-size:auto}.card-icon{width:48px;height:48px}.build-card .app-name{font-size:17px}.build-card .status{padding:4px 10px;font-size:12px}.build-card .actions-col{min-width:auto;flex:1 1 100%}.build-card .btn-group{gap:6px;justify-content:flex-start;width:100%}.build-card .dl-btn,.build-card .del-btn,.build-card .log-btn{padding:6px 10px;font-size:13px;min-width:auto;width:100%;text-align:center}}
+@media(max-width:480px){.build-card{padding:10px;gap:8px}.build-card .info{order:1;width:calc(100% - 56px)}.build-card .right-col{order:2;width:100%}.build-card .card-icon{order:0;width:40px;height:40px}.build-card .actions-col{flex:1 1 100%}.build-card .btn-group{flex-direction:column;align-items:stretch}.build-card .btn-group a,.build-card .dl-btn,.build-card .del-btn,.build-card .log-btn{width:100%;padding:10px 12px;font-size:14px}}
+.build-card .status{padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
+.status-success{background:#23863620;color:#3fb950}
+.status-failure{background:#da363320;color:#f85149}
+.status-pending{background:#d2992220;color:#d29922}
+.version-line{font-size:12px;color:#8b949e}
+#builds-container,#active-container{padding:0 16px 16px}
+.spinner-overlay{position:fixed;top:24px;right:24px;width:24px;height:24px;pointer-events:none;z-index:10}
+.spinner-overlay .spinner{width:24px;height:24px;border:3px solid #30363d;border-top-color:#58a6ff;border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.fade-in{animation:fadeSlideUp .5s ease-out}
-.fade-in-delayed{animation:fadeSlideUp .5s ease-out .6s both}
-@keyframes fadeSlideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-input[name^="admob_"]{text-align:right;direction:rtl}
-input[name="zeywin_api_key"]{text-align:right;direction:rtl}
-.file-label{cursor:pointer;padding:8px;border:1px dashed #30363d;border-radius:4px;text-align:center;display:block}
-.file-label .file-btn{color:#58a6ff;font-size:13px}
-@media(max-width:768px){.build-card{flex-wrap:wrap;gap:8px;padding:10px}.card-icon{width:44px;height:44px}.build-card .app-name{font-size:16px}.build-card .actions{width:100%;justify-content:flex-start}}
-@media(max-width:480px){.build-card{padding:8px;gap:6px}.card-icon{width:36px;height:36px}}
+.build-card .btn-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.build-card .btn-group a,.dl-btn,.del-btn,.log-btn{padding:8px 14px;border-radius:10px;font-size:14px;text-decoration:none;cursor:pointer;border:none;display:inline-block;line-height:1.4;white-space:nowrap}
+.dl-btn{background:#238636;color:#fff;min-width:72px;text-align:center;font-weight:600}
+.dl-btn:hover{background:#2ea043}
+.del-btn{background:#da363320;color:#f85149;border:1px solid rgba(218,54,51,0.3);border-radius:999px;padding:8px 18px;font-weight:600;text-transform:lowercase}
+.del-btn:hover{background:#da363340}
+.log-btn{background:#21262d;color:#58a6ff;border-radius:10px}
+.log-btn:hover{background:#30363d}

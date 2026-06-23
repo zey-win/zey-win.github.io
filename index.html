@@ -3,13 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="builder-api" content="https://zeywin-android-builder-api.vercel.app">
 <meta name="builder-key" content="3e9b0ac6ecd43c716a5c80255f6936b163a3ceaa">
-<link rel="stylesheet" href="styles.css?v2">
+<link rel="stylesheet" href="styles.css?v9">
 </head>
 <body>
-<div id="bar"><h1>ZeyWin CI/CD</h1><div id="loading" class="spinner-inline"><div class="spinner"></div></div><button id="new-build">+ Новая сборка</button></div>
-<div id="list"></div>
+<header>
+<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;background:#161b22">
+<h1 style="margin:0;font-size:24px;color:#f0f6fc">ZeyWin CI/CD</h1>
+<div id="loading" class="spinner-inline"><div class="spinner"></div></div>
+<button id="new-build" style="margin-left:auto">+ Новая сборка</button>
+</div>
+<div id="active-container" style="padding:0 16px 16px"></div>
+<div id="builds-container" style="padding:0 16px 16px"></div>
+</header>
 
 <div id="modal" class="hidden">
 <form id="build-form">
@@ -85,6 +95,6 @@
 </form>
 </div>
 
-<script src="builder.js?v1"></script>
+<script src="builder-20260625d.js"></script>
 </body>
 </html>
