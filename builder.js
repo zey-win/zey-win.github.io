@@ -78,13 +78,13 @@ let currentIconDataUrl = null;
 
 const REPO_NAMES = { "zey-win/plinko": "plinko", "zey-win/blackjack": "blackjack", "zey-win/roulette": "roulette", "zey-win/dragon-tiger": "dragon tiger", "zey-win/baccarat-tiger": "baccarat", "zey-win/wheel-of-fortune": "lucky wheel", "zey-win/Unstopable": "unstopable", "zey-win/SlotSpot": "slotspot" };
 const REPO_ICONS = {
-  "zey-win/plinko": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__plinko.png",
+  "zey-win/plinko": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/plinko.png",
   "zey-win/plinko@app/plinko-real-money": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__plinkorm.png",
-  "zey-win/plinko@app/plinko": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__plinko.png",
-  "zey-win/plinko@main": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__plinko.png",
+  "zey-win/plinko@app/plinko": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/plinko.png",
+  "zey-win/plinko@main": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__plinkofaling.png",
   "zey-win/blackjack": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__blackjack.png",
   "zey-win/roulette": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__roulette.png",
-  "zey-win/dragon-tiger": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__dragon-tiger.png",
+  "zey-win/dragon-tiger": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/plinko.png",
   "zey-win/baccarat-tiger": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__baccarat-tiger.png",
   "zey-win/wheel-of-fortune": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__wheel-of-fortune.png",
   "zey-win/Unstopable": "https://raw.githubusercontent.com/zey-win/zey-win.github.io/main/repo-icons/zey-win__Unstopable.png",
