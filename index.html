@@ -83,7 +83,18 @@
 </div>
 </div>
 
-<label style="margin-top:-30px">Название приложения <input name="app_name" id="f-app-name"></label>
+<label style="margin-top:-30px">Название приложения
+  <span style="display:flex;gap:6px;align-items:center">
+    <input name="app_name" id="f-app-name" style="flex:1">
+    <select id="config-select" style="width:auto;min-width:200px">
+      <option value="">— загрузить конфиг —</option>
+    </select>
+  </span>
+</label>
+<div style="display:flex;gap:8px;margin-top:6px;margin-bottom:4px">
+  <button type="button" id="config-save-btn" style="font-size:13px;padding:4px 12px">💾 Сохранить конфиг</button>
+  <button type="button" id="config-delete-btn" style="font-size:13px;padding:4px 12px;display:none">🗑 Удалить конфиг</button>
+</div>
 <label>Package name <input name="package_name" id="f-pkg"></label>
 <label class="pkg-hidden">ZeyWin API Key <input name="zeywin_api_key"></label>
 <label class="pkg-hidden">AdMob App ID <input name="admob_app_id" id="f-admob-app"></label>

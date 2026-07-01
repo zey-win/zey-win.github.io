@@ -35,6 +35,7 @@ const REPO_ICONS = {
 };
 
 let runMeta = {}, releases = [], firebaseJson = null, currentIconDataUrl = null, iconLoadedDeferred = null;
+let savedConfigs = [], selectedConfigId = null;
 let runs = [];
 
 function repoFromTitle(t) { const s = (t || "").toLowerCase().replace(/[^a-z0-9 ]/g, " "); for (const [repo, name] of Object.entries(REPO_NAMES)) if (s.includes(name)) return repo; return null; }
@@ -139,7 +140,9 @@ function buildCardHTML(r, idx) {
   const iconUrl = resolveIcon(r);
   const verStr = (meta?.ver) || String(r.runNumber || "");
   const codeStr = (meta?.code) || String(r.runAttempt || "1");
-  const versionInfo = verStr ? `<span class="version-line">v${esc(verStr)} (code ${codeStr})</span>` : "";
+  const versionInfo = verStr ? `<span class="version-line">${esc(app)} v${esc(verStr)}</span>` : `<span class="version-line">${esc(app)}</span>`;
+  const createdAt = r.createdAt ? new Date(r.createdAt) : null;
+  const dateStr = createdAt ? createdAt.toLocaleDateString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "";
   let downloads = { apk: null, aab: null };
   if (concl === "success") {
     if (meta?.apk || meta?.aab) downloads = { apk: meta.apk || null, aab: meta.aab || null };
@@ -162,7 +165,7 @@ function buildCardHTML(r, idx) {
   const iconBlock = iconUrl ? `<img class="card-icon" src="${iconUrl}" alt="" loading="lazy" onerror="this.onerror=null;this.alt='🎮'">` : `<div class="card-icon card-icon-placeholder">🎮</div>`;
   const timerId = `t-${r.id}`;
   const timerHtml = `<span class="timer" id="${timerId}" data-run="${r.id}" style="display:${st!=='completed'&&timers[r.id]?'inline':'none'};color:#ffd700;font-size:15px;font-weight:700">⏱ 00:00,00</span>`;
-  return `<div class="build-card${isProgress?' in-progress':''}" style="${bgStyle}" data-id="${r.id}">${iconBlock}<div class="info"><div class="app-name">${esc(app)}</div><div class="meta">${esc(pkg)}</div><div class="meta">${versionInfo}</div></div><div class="right-col"><div class="actions-col">${concl==="success"&&downloads.apk?`<a class="dl-btn dl-btn-apk" href="${downloads.apk}" download>APK</a>`:""}${concl==="success"&&downloads.aab?`<a class="dl-btn dl-btn-aab" href="${downloads.aab}" download>AAB</a>`:""}${concl!=="success"?`<a href="${esc(url)}" target="_blank" class="log-btn log-btn-bottom">Логи</a>`:""}</div><div class="actions-col"><div class="status-row">${timerHtml}<span class="status ${cls} status-small">${label}</span></div><button class="del-btn" onclick="deleteRun(${r.id},event)" title="Удалить">✕</button></div></div></div>`;
+  return `<div class="build-card${isProgress?' in-progress':''}" style="${bgStyle}" data-id="${r.id}">${iconBlock}<div class="info"><div class="app-name">${versionInfo}</div><div class="meta">${esc(pkg)}</div>${dateStr?`<div class="meta" style="font-size:12px;color:#8b949e">${esc(dateStr)}</div>`:""}</div><div class="right-col"><div class="actions-col">${concl==="success"&&downloads.apk?`<a class="dl-btn dl-btn-apk" href="${downloads.apk}" download>APK</a>`:""}${concl==="success"&&downloads.aab?`<a class="dl-btn dl-btn-aab" href="${downloads.aab}" download>AAB</a>`:""}${concl!=="success"?`<a href="${esc(url)}" target="_blank" class="log-btn log-btn-bottom">Логи</a>`:""}</div><div class="actions-col"><div class="status-row">${timerHtml}<span class="status ${cls} status-small">${label}</span></div><button class="del-btn" onclick="deleteRun(${r.id},event)" title="Удалить">✕</button></div></div></div>`;
 }
 
 function updateTimers() {
@@ -332,19 +335,30 @@ modal.addEventListener("click", e => { if (e.target === modal) modal.classList.a
 
 form.addEventListener("submit", async e => {
   e.preventDefault();
+  const btn = $("modal-submit");
+  btn.disabled = true;
+  btn.textContent = "Подожди...";
+
   const fd = new FormData(form);
   if (!currentIconDataUrl && iconLoadedDeferred) {
     try { const url = await iconLoadedDeferred; if (url) currentIconDataUrl = url; } catch {}
   }
   const iconData = currentIconDataUrl || "";
+  const buildFormat = fd.get("build_format") || "apk";
+  const rawVersion = fd.get("version_name") || "1";
+  const rawCode = fd.get("version_code") || "1";
+
+  // APK always gets version=1/1, AAB gets actual values
   const p = {
     game_repository: fd.get("game_repository") || "zey-win/plinko",
     game_ref: fd.get("game_ref") || "main",
     app_name: fd.get("app_name") || "",
     package_name: fd.get("package_name") || "",
-    build_format: fd.get("build_format") || "apk",
-    version_name: fd.get("version_name") || "",
-    version_code: fd.get("version_code") || "",
+    build_format: buildFormat,
+    version_name: buildFormat === "aab" ? rawVersion : "1",
+    version_code: buildFormat === "aab" ? rawCode : "1",
+    aab_version_name: buildFormat !== "apk" ? rawVersion : "1",
+    aab_version_code: buildFormat !== "apk" ? rawCode : "1",
     zeywin_api_key: fd.get("zeywin_api_key") || "",
     admob_android_app_id: fd.get("admob_app_id") || "",
     admob_android_banner_id: fd.get("admob_banner") || "",
@@ -355,6 +369,8 @@ form.addEventListener("submit", async e => {
   };
   try {
     const res = await fetch(`${apiBase}/api/build`, { method: "POST", headers: op(), body: JSON.stringify(p) });
+    btn.disabled = false;
+    btn.textContent = "Собрать";
     if (!res.ok) { alert("Ошибка: " + await res.text().catch(() => "")); return; }
     const d = await res.json();
     if (d.run) {
@@ -373,43 +389,149 @@ form.addEventListener("submit", async e => {
       renderAll();
     } else loadBuilds();
     iconLoadedDeferred = null;
-    // Animated close
-    animateModalClose();
-  } catch (err) { alert("Ошибка: " + err.message); }
+    modal.classList.add("hidden");
+    form.style.display = "";
+    $("build-progress")?.classList.add("hidden");
+    form.querySelectorAll("label, .modal-actions, .form-row, .icon-format-row").forEach(el => { el.style.opacity = ""; el.style.transform = ""; });
+  } catch (err) { btn.disabled = false; btn.textContent = "Собрать"; alert("Ошибка: " + err.message); }
 });
 
-function animateModalClose() {
-  const form = $("build-form");
-  const progress = $("build-progress");
-  const steps = $("bp-steps");
-  const all = form.querySelectorAll("label, .modal-actions, .form-row, .icon-format-row");
-  const phrases = [
-    "Клонирование репозитория...", "Установка зависимостей...", "Компиляция кода...",
-    "Сборка ресурсов...", "Оптимизация изображений...", "Подписание APK...",
-    "Проверка ProGuard...", "Генерация AAB...", "Запуск тестов...",
-    "Финализация сборки...", "Загрузка артефактов...", "Обновление метаданных..."
-  ];
-  let delay = 0;
-  all.forEach((el, i) => {
-    const d = 200 + i * 120;
-    setTimeout(() => { el.style.transition = "opacity .3s,transform .3s"; el.style.opacity = "0"; el.style.transform = "scale(.95)"; }, d);
-    delay = d + 300;
-  });
-  setTimeout(() => { form.style.display = "none"; progress.classList.remove("hidden"); }, delay);
-  const totalTime = 5000;
-  const start = Date.now();
-  let idx = 0;
-  function scrollText() {
-    const elapsed = Date.now() - start;
-    if (elapsed >= totalTime) { modal.classList.add("hidden"); form.style.display = ""; form.querySelectorAll("label, .modal-actions, .form-row, .icon-format-row").forEach(el => { el.style.opacity = ""; el.style.transform = ""; }); progress.classList.add("hidden"); return; }
-    idx = Math.floor((elapsed / totalTime) * phrases.length * 3) % phrases.length;
-    steps.textContent = phrases[idx % phrases.length];
-    steps.style.opacity = "0";
-    requestAnimationFrame(() => { steps.style.transition = "opacity .05s"; steps.style.opacity = "1"; });
-    requestAnimationFrame(scrollText);
-  }
-  requestAnimationFrame(scrollText);
+// ----- Configs: load saved build configs -----
+async function loadConfigs() {
+  try {
+    const res = await fetch("./configs.json");
+    if (!res.ok) return;
+    const data = await res.json();
+    savedConfigs = data.configs || [];
+    const sel = $("config-select");
+    sel.innerHTML = '<option value="">— загрузить конфиг —</option>';
+    for (const c of savedConfigs) {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = c.label;
+      sel.appendChild(opt);
+    }
+  } catch {}
 }
+
+function fillConfig(configId) {
+  const cfg = savedConfigs.find(c => c.id === configId);
+  if (!cfg) return;
+  selectedConfigId = configId;
+  const fields = {
+    game_repository: cfg.game_repository,
+    app_name: cfg.app_name,
+    package_name: cfg.package_name,
+    version_name: cfg.version_name,
+    version_code: cfg.version_code,
+    zeywin_api_key: cfg.zeywin_api_key,
+    admob_app_id: cfg.admob_app_id,
+    admob_banner: cfg.admob_banner,
+    admob_interstitial: cfg.admob_interstitial,
+    admob_rewarded: cfg.admob_rewarded
+  };
+  for (const [name, val] of Object.entries(fields)) {
+    const el = document.querySelector(`[name="${name}"]`);
+    if (el) el.value = val || "";
+  }
+  // Trigger reveal hidden fields
+  if (cfg.package_name) $("f-pkg").dispatchEvent(new Event("input"));
+  if (cfg.admob_app_id) $("f-admob-app").dispatchEvent(new Event("input"));
+  // Show hidden ZeyWin field
+  if (cfg.zeywin_api_key) document.querySelectorAll(".pkg-hidden").forEach(el => el.classList.add("show"));
+  // Load google-services.json
+  if (cfg.firebase_cfg) {
+    fetch(`./firebase-cfg/${cfg.firebase_cfg}`)
+      .then(r => r.ok ? r.text() : null)
+      .then(text => {
+        if (text) {
+          firebaseJson = btoa(unescape(encodeURIComponent(text)));
+          const st = $("firebase-status");
+          if (st) { st.textContent = "✅ Firebase загружен"; st.style.display = "inline"; }
+        }
+      }).catch(() => {});
+  } else {
+    firebaseJson = null;
+    const st = $("firebase-status");
+    if (st) { st.textContent = ""; st.style.display = "none"; }
+  }
+  // Load icon
+  getIconDataUrl(cfg.game_repository, "main").then(url => { if (url) currentIconDataUrl = url; });
+  // Show delete button
+  const delBtn = $("config-delete-btn");
+  if (delBtn) delBtn.style.display = "inline-block";
+}
+
+$("config-select").addEventListener("change", e => {
+  if (e.target.value) fillConfig(e.target.value);
+});
+
+$("config-save-btn").addEventListener("click", async () => {
+  const fd = new FormData(form);
+  const cfg = {
+    id: (fd.get("app_name") || "config").toLowerCase().replace(/\s+/g, "-"),
+    label: fd.get("app_name") || "Без имени",
+    game_repository: fd.get("game_repository") || "zey-win/plinko",
+    app_name: fd.get("app_name") || "",
+    package_name: fd.get("package_name") || "",
+    version_name: fd.get("version_name") || "1",
+    version_code: fd.get("version_code") || "1",
+    zeywin_api_key: fd.get("zeywin_api_key") || "",
+    admob_app_id: fd.get("admob_app_id") || "",
+    admob_banner: fd.get("admob_banner") || "",
+    admob_interstitial: fd.get("admob_interstitial") || "",
+    admob_rewarded: fd.get("admob_rewarded") || "",
+    firebase_cfg: null
+  };
+  // Save via backend API
+  try {
+    const res = await fetch(`${apiBase}/api/configs/save`, {
+      method: "POST", headers: op(), body: JSON.stringify(cfg)
+    });
+    if (res.ok) {
+      alert("Конфиг сохранён на сервере");
+      loadConfigs();
+    } else {
+      // Fallback: save locally
+      savedConfigs.push(cfg);
+      const sel = $("config-select");
+      const opt = document.createElement("option");
+      opt.value = cfg.id;
+      opt.textContent = cfg.label;
+      sel.appendChild(opt);
+      alert("Конфиг сохранён локально (не забудьте добавить в configs.json)");
+    }
+  } catch {
+    savedConfigs.push(cfg);
+    const sel = $("config-select");
+    const opt = document.createElement("option");
+    opt.value = cfg.id;
+    opt.textContent = cfg.label;
+    sel.appendChild(opt);
+    alert("Конфиг сохранён локально");
+  }
+});
+
+$("config-delete-btn").addEventListener("click", async () => {
+  if (!selectedConfigId) return;
+  if (!confirm(`Удалить конфиг "${selectedConfigId}"?`)) return;
+  try {
+    const res = await fetch(`${apiBase}/api/configs/delete`, {
+      method: "POST", headers: op(), body: JSON.stringify({ id: selectedConfigId })
+    });
+    savedConfigs = savedConfigs.filter(c => c.id !== selectedConfigId);
+    selectedConfigId = null;
+    $("config-delete-btn").style.display = "none";
+    loadConfigs();
+    if (!res.ok) alert("Конфиг удалён локально (сервер: " + await res.text().catch(() => "ошибка") + ")");
+  } catch {
+    savedConfigs = savedConfigs.filter(c => c.id !== selectedConfigId);
+    selectedConfigId = null;
+    $("config-delete-btn").style.display = "none";
+    loadConfigs();
+    alert("Конфиг удалён локально");
+  }
+});
 
 // ----- Step buttons -----
 document.addEventListener("click", e => {
@@ -506,6 +628,7 @@ renderSkeletons();
   await loadReleases();
   updateBranches();
   loadBuilds();
+  loadConfigs();
   setInterval(loadBuilds, 15000);
 })();
 
