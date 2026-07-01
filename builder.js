@@ -422,18 +422,30 @@ function renderConfigDropdown() {
     del.onclick = async (e) => {
       e.stopPropagation();
       if (!confirm(`Удалить "${c.label}" из истории?`)) return;
-      try {
-        await fetch(`${apiBase}/api/configs/delete`, {
-          method: "POST", headers: op(), body: JSON.stringify({ id: c.id })
-        });
-      } catch {}
-      savedConfigs = savedConfigs.filter(x => x.id !== c.id);
-      // Remove from localStorage too
+      const id = c.id;
+      savedConfigs = savedConfigs.filter(x => x.id !== id);
       try {
         const local = JSON.parse(localStorage.getItem("savedConfigs") || "[]");
-        localStorage.setItem("savedConfigs", JSON.stringify(local.filter(x => x.id !== c.id)));
+        localStorage.setItem("savedConfigs", JSON.stringify(local.filter(x => x.id !== id)));
       } catch {}
-      if (selectedConfigId === c.id) { selectedConfigId = null; }
+      // Delete from repo (configs.json) via GitHub API
+      try {
+        const getRes = await fetch("https://api.github.com/repos/zey-win/zey-win.github.io/contents/configs.json", {
+          headers: { "Authorization": "token " + operatorKey, "Accept": "application/vnd.github.v3+json" }
+        });
+        if (getRes.ok) {
+          const meta = await getRes.json();
+          const content = JSON.parse(atob(meta.content));
+          content.configs = content.configs.filter(x => x.id !== id);
+          const updated = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+          await fetch("https://api.github.com/repos/zey-win/zey-win.github.io/contents/configs.json", {
+            method: "PUT",
+            headers: { "Authorization": "token " + operatorKey, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" },
+            body: JSON.stringify({ message: "delete config: " + id, content: updated, sha: meta.sha })
+          });
+        }
+      } catch {}
+      if (selectedConfigId === id) { selectedConfigId = null; }
       renderConfigDropdown();
     };
     item.appendChild(del);
@@ -457,14 +469,29 @@ function toggleDropdown() {
 }
 
 async function loadConfigs() {
+  let loaded = false;
+  // Try GitHub API first (always up-to-date)
   try {
-    // Load static configs from repo
-    const res = await fetch("./configs.json");
+    const res = await fetch("https://api.github.com/repos/zey-win/zey-win.github.io/contents/configs.json", {
+      headers: { "Authorization": "token " + operatorKey, "Accept": "application/vnd.github.v3+json" }
+    });
     if (res.ok) {
-      const data = await res.json();
+      const meta = await res.json();
+      const data = JSON.parse(atob(meta.content));
       savedConfigs = data.configs || [];
+      loaded = true;
     }
   } catch {}
+  // Fallback to raw CDN (might be cached)
+  if (!loaded) {
+    try {
+      const res = await fetch("./configs.json?" + Date.now());
+      if (res.ok) {
+        const data = await res.json();
+        savedConfigs = data.configs || [];
+      }
+    } catch {}
+  }
   // Merge locally-saved configs from auto-save
   try {
     const local = JSON.parse(localStorage.getItem("savedConfigs") || "[]");
@@ -521,7 +548,7 @@ function fillConfig(configId) {
 }
 
 // Auto-save current form data as a config after successful build
-function autoSaveConfig(fd) {
+async function autoSaveConfig(fd) {
   const label = fd.get("app_name") || "Без имени";
   const id = label.toLowerCase().replace(/\s+/g, "-");
   if (savedConfigs.some(c => c.id === id)) return;
@@ -541,15 +568,31 @@ function autoSaveConfig(fd) {
     firebase_cfg: null
   };
   savedConfigs.push(cfg);
-  // Persist to localStorage + try server
+  // Persist to localStorage
   try {
     const local = JSON.parse(localStorage.getItem("savedConfigs") || "[]");
     local.push(cfg);
     localStorage.setItem("savedConfigs", JSON.stringify(local));
   } catch {}
-  fetch(`${apiBase}/api/configs/save`, {
-    method: "POST", headers: op(), body: JSON.stringify(cfg)
-  }).catch(() => {});
+  // Save to repo (configs.json) via GitHub API
+  try {
+    const getRes = await fetch("https://api.github.com/repos/zey-win/zey-win.github.io/contents/configs.json", {
+      headers: { "Authorization": "token " + operatorKey, "Accept": "application/vnd.github.v3+json" }
+    });
+    if (getRes.ok) {
+      const meta = await getRes.json();
+      const content = JSON.parse(atob(meta.content));
+      if (!content.configs.some(x => x.id === cfg.id)) {
+        content.configs.push(cfg);
+        const updated = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2))));
+        await fetch("https://api.github.com/repos/zey-win/zey-win.github.io/contents/configs.json", {
+          method: "PUT",
+          headers: { "Authorization": "token " + operatorKey, "Accept": "application/vnd.github.v3+json", "Content-Type": "application/json" },
+          body: JSON.stringify({ message: "auto-save config: " + cfg.id, content: updated, sha: meta.sha })
+        });
+      }
+    }
+  } catch {}
 }
 
 // Dropdown trigger click
