@@ -428,6 +428,11 @@ function renderConfigDropdown() {
         });
       } catch {}
       savedConfigs = savedConfigs.filter(x => x.id !== c.id);
+      // Remove from localStorage too
+      try {
+        const local = JSON.parse(localStorage.getItem("savedConfigs") || "[]");
+        localStorage.setItem("savedConfigs", JSON.stringify(local.filter(x => x.id !== c.id)));
+      } catch {}
       if (selectedConfigId === c.id) { selectedConfigId = null; }
       renderConfigDropdown();
     };
@@ -453,10 +458,19 @@ function toggleDropdown() {
 
 async function loadConfigs() {
   try {
+    // Load static configs from repo
     const res = await fetch("./configs.json");
-    if (!res.ok) return;
-    const data = await res.json();
-    savedConfigs = data.configs || [];
+    if (res.ok) {
+      const data = await res.json();
+      savedConfigs = data.configs || [];
+    }
+  } catch {}
+  // Merge locally-saved configs from auto-save
+  try {
+    const local = JSON.parse(localStorage.getItem("savedConfigs") || "[]");
+    for (const lc of local) {
+      if (!savedConfigs.some(c => c.id === lc.id)) savedConfigs.push(lc);
+    }
   } catch {}
 }
 
@@ -510,7 +524,7 @@ function fillConfig(configId) {
 function autoSaveConfig(fd) {
   const label = fd.get("app_name") || "Без имени";
   const id = label.toLowerCase().replace(/\s+/g, "-");
-  if (savedConfigs.some(c => c.id === id)) return; // already exists
+  if (savedConfigs.some(c => c.id === id)) return;
   const cfg = {
     id: id,
     label: label,
@@ -527,6 +541,12 @@ function autoSaveConfig(fd) {
     firebase_cfg: null
   };
   savedConfigs.push(cfg);
+  // Persist to localStorage + try server
+  try {
+    const local = JSON.parse(localStorage.getItem("savedConfigs") || "[]");
+    local.push(cfg);
+    localStorage.setItem("savedConfigs", JSON.stringify(local));
+  } catch {}
   fetch(`${apiBase}/api/configs/save`, {
     method: "POST", headers: op(), body: JSON.stringify(cfg)
   }).catch(() => {});
