@@ -388,6 +388,7 @@ form.addEventListener("submit", async e => {
       runs = [d.run, ...runs];
       renderAll();
     } else loadBuilds();
+    autoSaveConfig(fd);
     iconLoadedDeferred = null;
     modal.classList.add("hidden");
     form.style.display = "";
@@ -396,21 +397,66 @@ form.addEventListener("submit", async e => {
   } catch (err) { btn.disabled = false; btn.textContent = "Собрать"; alert("Ошибка: " + err.message); }
 });
 
-// ----- Configs: load saved build configs -----
+// ----- Configs: build history dropdown -----
+function renderConfigDropdown() {
+  const list = $("config-list");
+  const trigger = $("config-trigger");
+  if (!list) return;
+  list.innerHTML = "";
+  for (const c of savedConfigs) {
+    const item = document.createElement("div");
+    item.style.cssText = "display:flex;align-items:center;padding:6px 10px;cursor:pointer;border-bottom:1px solid #21262d;font-size:14px";
+    item.onmouseenter = () => { item.style.background = "#1c2333"; };
+    item.onmouseleave = () => { item.style.background = ""; };
+    const label = document.createElement("span");
+    label.style.cssText = "flex:1;color:#c9d1d9";
+    label.textContent = c.label;
+    label.onclick = (e) => { e.stopPropagation(); fillConfig(c.id); closeDropdown(); };
+    item.appendChild(label);
+    const del = document.createElement("button");
+    del.textContent = "✕";
+    del.title = "Удалить";
+    del.style.cssText = "background:none;border:none;color:#ff4444;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:3px";
+    del.onmouseenter = () => { del.style.background = "#ff444422"; };
+    del.onmouseleave = () => { del.style.background = "none"; };
+    del.onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm(`Удалить "${c.label}" из истории?`)) return;
+      try {
+        await fetch(`${apiBase}/api/configs/delete`, {
+          method: "POST", headers: op(), body: JSON.stringify({ id: c.id })
+        });
+      } catch {}
+      savedConfigs = savedConfigs.filter(x => x.id !== c.id);
+      if (selectedConfigId === c.id) { selectedConfigId = null; }
+      renderConfigDropdown();
+    };
+    item.appendChild(del);
+    list.appendChild(item);
+  }
+  if (!savedConfigs.length) {
+    list.innerHTML = '<div style="padding:8px;color:#8b949e;font-size:13px">Нет сохранённых конфигов</div>';
+  }
+}
+
+function closeDropdown() {
+  const list = $("config-list");
+  if (list) list.style.display = "none";
+}
+
+function toggleDropdown() {
+  const list = $("config-list");
+  if (!list) return;
+  list.style.display = list.style.display === "none" ? "block" : "none";
+  if (list.style.display === "block") renderConfigDropdown();
+}
+
 async function loadConfigs() {
   try {
     const res = await fetch("./configs.json");
     if (!res.ok) return;
     const data = await res.json();
     savedConfigs = data.configs || [];
-    const sel = $("config-select");
-    sel.innerHTML = '<option value="">— загрузить конфиг —</option>';
-    for (const c of savedConfigs) {
-      const opt = document.createElement("option");
-      opt.value = c.id;
-      opt.textContent = c.label;
-      sel.appendChild(opt);
-    }
   } catch {}
 }
 
@@ -437,7 +483,6 @@ function fillConfig(configId) {
   // Trigger reveal hidden fields
   if (cfg.package_name) $("f-pkg").dispatchEvent(new Event("input"));
   if (cfg.admob_app_id) $("f-admob-app").dispatchEvent(new Event("input"));
-  // Show hidden ZeyWin field
   if (cfg.zeywin_api_key) document.querySelectorAll(".pkg-hidden").forEach(el => el.classList.add("show"));
   // Load google-services.json
   if (cfg.firebase_cfg) {
@@ -457,20 +502,18 @@ function fillConfig(configId) {
   }
   // Load icon
   getIconDataUrl(cfg.game_repository, "main").then(url => { if (url) currentIconDataUrl = url; });
-  // Show delete button
-  const delBtn = $("config-delete-btn");
-  if (delBtn) delBtn.style.display = "inline-block";
+  const trigger = $("config-trigger");
+  if (trigger) trigger.textContent = "📜 " + cfg.label;
 }
 
-$("config-select").addEventListener("change", e => {
-  if (e.target.value) fillConfig(e.target.value);
-});
-
-$("config-save-btn").addEventListener("click", async () => {
-  const fd = new FormData(form);
+// Auto-save current form data as a config after successful build
+function autoSaveConfig(fd) {
+  const label = fd.get("app_name") || "Без имени";
+  const id = label.toLowerCase().replace(/\s+/g, "-");
+  if (savedConfigs.some(c => c.id === id)) return; // already exists
   const cfg = {
-    id: (fd.get("app_name") || "config").toLowerCase().replace(/\s+/g, "-"),
-    label: fd.get("app_name") || "Без имени",
+    id: id,
+    label: label,
     game_repository: fd.get("game_repository") || "zey-win/plinko",
     app_name: fd.get("app_name") || "",
     package_name: fd.get("package_name") || "",
@@ -483,54 +526,18 @@ $("config-save-btn").addEventListener("click", async () => {
     admob_rewarded: fd.get("admob_rewarded") || "",
     firebase_cfg: null
   };
-  // Save via backend API
-  try {
-    const res = await fetch(`${apiBase}/api/configs/save`, {
-      method: "POST", headers: op(), body: JSON.stringify(cfg)
-    });
-    if (res.ok) {
-      alert("Конфиг сохранён на сервере");
-      loadConfigs();
-    } else {
-      // Fallback: save locally
-      savedConfigs.push(cfg);
-      const sel = $("config-select");
-      const opt = document.createElement("option");
-      opt.value = cfg.id;
-      opt.textContent = cfg.label;
-      sel.appendChild(opt);
-      alert("Конфиг сохранён локально (не забудьте добавить в configs.json)");
-    }
-  } catch {
-    savedConfigs.push(cfg);
-    const sel = $("config-select");
-    const opt = document.createElement("option");
-    opt.value = cfg.id;
-    opt.textContent = cfg.label;
-    sel.appendChild(opt);
-    alert("Конфиг сохранён локально");
-  }
-});
+  savedConfigs.push(cfg);
+  fetch(`${apiBase}/api/configs/save`, {
+    method: "POST", headers: op(), body: JSON.stringify(cfg)
+  }).catch(() => {});
+}
 
-$("config-delete-btn").addEventListener("click", async () => {
-  if (!selectedConfigId) return;
-  if (!confirm(`Удалить конфиг "${selectedConfigId}"?`)) return;
-  try {
-    const res = await fetch(`${apiBase}/api/configs/delete`, {
-      method: "POST", headers: op(), body: JSON.stringify({ id: selectedConfigId })
-    });
-    savedConfigs = savedConfigs.filter(c => c.id !== selectedConfigId);
-    selectedConfigId = null;
-    $("config-delete-btn").style.display = "none";
-    loadConfigs();
-    if (!res.ok) alert("Конфиг удалён локально (сервер: " + await res.text().catch(() => "ошибка") + ")");
-  } catch {
-    savedConfigs = savedConfigs.filter(c => c.id !== selectedConfigId);
-    selectedConfigId = null;
-    $("config-delete-btn").style.display = "none";
-    loadConfigs();
-    alert("Конфиг удалён локально");
-  }
+// Dropdown trigger click
+$("config-trigger").addEventListener("click", toggleDropdown);
+// Close on outside click
+document.addEventListener("click", e => {
+  const dd = $("config-dropdown");
+  if (dd && !dd.contains(e.target)) closeDropdown();
 });
 
 // ----- Step buttons -----
